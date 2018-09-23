@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  postgres:
+    image: 'postgres:10'
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+      POSTGRES_INITDB_ARGS:
+
+

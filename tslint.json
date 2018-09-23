@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json.schemastore.org/tslint",
+  "extends": "tslint:latest",
+  "rules": {
+    "await-promise": true,
+    "strict-boolean-expressions": [
+      true,
+      "allow-null-union",
+      "allow-undefined-union",
+      "allow-string",
+      "allow-number",
+      "allow-boolean-or-undefined"
+    ],
+    "interface-name": false,
+    "no-empty-interface": true,
+    "adjacent-overload-signatures": true,
+    "no-implicit-dependencies": false,
+    "max-line-length": [
+      true,
+      140
+    ],
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
+    "object-literal-sort-keys": [
+      false
+    ],
+    "interface-over-type-literal": [
+      false
+    ],
+    "trailing-comma": [
+      true,
+      {
+        "multiline": {
+          "objects": "always",
+          "arrays": "always",
+          "functions": "never",
+          "typeLiterals": "always",
+          "exports": "always",
+          "imports": "always"
+        },
+        "singleline": {
+          "objects": "never",
+          "arrays": "never",
+          "functions": "never",
+          "typeLiterals": "never",
+          "exports": "never",
+          "imports": "never"
+        },
+        "esSpecCompliant": true
+      }
+    ]
+  }
+}

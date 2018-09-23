@@ -1,0 +1,16 @@
+{
+  "name": "morbid-postgres",
+  "version": "1.0.0",
+  "description": "Querybuilder for postgres",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/pg": "^7.4.10",
+    "pg": "^7.4.3",
+    "typescript": "^3.0.3"
+  }
+}

@@ -101,10 +101,97 @@ export type CustomTypeSignature<T> = T extends { schemas: infer S } ? {
   } : never;
 } : never;
 
+type GetTableOrView<Schema> =
+  (Schema extends { tables: infer Tables } ? StringKeys<Tables> : never) |
+  (Schema extends { views: infer Views } ? StringKeys<Views> : never);
+
+type GetTableOrViewType<Schema, Name> =
+  (Schema extends { tables: infer Tables }
+    ? Name extends StringKeys<Tables>
+    ? Tables[Name] : never
+    : never
+  ) |
+  (Schema extends { views: infer Views }
+    ? Name extends StringKeys<Views>
+    ? Views[Name] : never
+    : never
+  );
+
+type GetColumnJSType<Column> = Column extends { type: infer Type }
+  ? Type | Type[] | (
+    Column extends { nullable: "T" } ? null : Type
+  )
+  : never;
+
+type WhereStart<Schema, TargetNames extends string> = {
+
+};
+
+type QBPostFrom<Schema, FromTarget extends string> = WhereStart<Schema, FromTarget>;
+
+type QBTableOrViewPostFrom<Schema, FromTargetName extends string> = QBPostFrom<Schema, FromTargetName>;
+
+type GetSchemas<T> = T extends { schemas: infer S } ? StringKeys<S> : never;
+type SchemaType<T, SchemaName> = T extends { schemas: infer S }
+  ? SchemaName extends StringKeys<S> ? S[SchemaName] : never
+  : never;
+
+interface WhereCondition {
+  source: {
+    type: "table";
+    schema: string;
+    column: string;
+  };
+  target: {
+    type: "literal";
+    value: any
+  };
+}
+
+type WhereLiteral<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
+  columns: infer Columns,
+}
+  ? {
+    [ColumnName in StringKeys<Columns>]?: GetColumnJSType<Columns[ColumnName]>
+  }
+  : never;
+
+class QBTableOrViewFrom<Def, SchemaName, Schema, FromTargetNames extends string> {
+  constructor(
+    private def: Def,
+    private schema: SchemaName,
+    private fromTargets: FromTargetNames[],
+    private whereConditions: WhereCondition[]
+  ) { }
+  public where = <Params extends {
+    [Target in FromTargetNames]: WhereLiteral<Schema, Target>
+  }>(p: Partial<Params>) => {
+    const currentConditions = this.whereConditions.slice();
+    return new QBTableOrViewFrom(this.def, this.schema, this.fromTargets, currentConditions);
+  }
+}
+
+class QBFrom<Def, SchemaName, Schema> {
+  constructor(private def: Def, private schema: SchemaName) { }
+  public from = <TableOrViewName extends GetTableOrView<Schema>>(tableOrview: TableOrViewName) => {
+    return new QBTableOrViewFrom<Def, SchemaName, Schema, TableOrViewName>(this.def, this.schema, [tableOrview], []);
+  }
+}
+
+class QBStart<Def> {
+  constructor(private def: Def) { }
+  public using = <SchemaName extends GetSchemas<Def>>(schemaname: SchemaName) => {
+    return new QBFrom<Def, SchemaName, SchemaType<Def, SchemaName>>(this.def, schemaname);
+  }
+}
+
 export function Wrap<T, C extends CustomTypeSignature<T>>(definition: T) {
   const extracted: T extends { schemas: infer S } ? { schemas: InferSchema<S, C> } : never = definition as any;
+
   return {
     __def: extracted,
-
+    get qb() {
+      return new QBStart(extracted);
+    },
   };
 }

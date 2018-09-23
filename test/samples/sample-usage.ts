@@ -31,4 +31,14 @@ type ColumnTypeOverrides = {
   },
 };
 
-const qb = morbid.querybuilder<typeof Def, ColumnTypeOverrides>(Def);
+const { qb, __def } = morbid.querybuilder<typeof Def, ColumnTypeOverrides>(Def);
+
+const schemaQb = qb.using("test");
+
+schemaQb
+  .from("one")
+  .where({
+    one: {
+      v: "123",
+    },
+  });

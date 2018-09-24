@@ -1,6 +1,6 @@
 import * as pg from "pg";
-import { CustomTypeSignature, Wrap } from "./definition-inference";
-import { QueryBuilder } from "./querybuilder";
+import { CustomTypeSignature } from "./definition-inference";
+import { Wrap } from "./querybuilder";
 import { SchemaExtractor } from "./schema-extractor";
 
 export class Morbid {
@@ -16,13 +16,12 @@ export class Morbid {
   public async extractSchema(params: {
     destinationFile: string;
   }) {
-    const schemas = new SchemaExtractor(this.pool).extractTables();
-
+    await new SchemaExtractor(this.pool).extract(params.destinationFile);
   }
   /**
    *
    */
   public querybuilder<T, C extends CustomTypeSignature<T>>(definition: T) {
-    return Wrap<T, C>(definition);
+    return Wrap<T, C>(definition, this.pool);
   }
 }

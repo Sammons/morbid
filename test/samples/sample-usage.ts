@@ -1,7 +1,7 @@
 import * as pg from "pg";
+import "source-map-support/register";
 import { Morbid } from "../../src";
-import { Wrap } from "../../src/definition-inference";
-import { Def } from "./sample-definition";
+import { Def } from "./morbid-definition";
 const pool = new pg.Pool({
 
 });
@@ -22,23 +22,22 @@ const morbid = new Morbid({
 // when you disagree with the type morbid is detecting for a specific column
 // you can override it:
 type ColumnTypeOverrides = {
-  test: {//  schema
-    one: {// table
-      id: {// column
-        test: number;
-      },
-    },
+  information_schema: {//  schema
+    // tables: {// table
+    //   // table_name: string
+    // },
   },
 };
 
-const { qb, __def } = morbid.querybuilder<typeof Def, ColumnTypeOverrides>(Def);
+const qb = morbid.querybuilder(Def);
 
-const schemaQb = qb.using("test");
+const schemaQb = qb.using("information_schema");
 
-schemaQb
-  .from("one")
-  .where({
-    one: {
-      v: "123",
-    },
-  });
+schemaQb.fromTable("tables").where({
+  tables: {
+    table_name: "tables",
+    table_type: "VIEW",
+  },
+}).selectColumns({
+  tables: ["table_name", "table_type", "table_schema"],
+}).run().then(r => console.log(r)).catch(e => console.log(e));

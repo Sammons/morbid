@@ -32,6 +32,9 @@
     "max-classes-per-file": [
       false
     ],
+    "no-submodule-imports": [
+      false
+    ],
     "trailing-comma": [
       true,
       {

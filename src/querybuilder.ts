@@ -53,7 +53,7 @@ function CompileQuery(params: {
   statement += ` FROM ${primaryTarget.source.schema}.${primaryTarget.source.name}`;
   statement += ` WHERE`;
   let counter = 1;
-  const bindings = [];
+  const bindings: any[] = [];
   wheres.forEach((whereCond, i) => {
     const type: string =
       (
@@ -68,7 +68,6 @@ function CompileQuery(params: {
     counter++;
     bindings.push(whereCond.target.value);
   });
-  console.log(statement);
   return {
     sql: statement,
     bindings,

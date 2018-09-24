@@ -16,4 +16,5 @@ const morbid = new Morbid({
 
 morbid.extractSchema({
   destinationFile: "./test/samples/morbid-definition.ts",
-});
+  schemas: ["information_schema"],
+}).catch(e => console.log(e))

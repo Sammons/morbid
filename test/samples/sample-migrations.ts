@@ -19,5 +19,8 @@ const morbid = new Morbid({
 });
 
 morbid.extractSchema({
-  destinationFile: "../ morbid - definition.ts",
+  destinationFile: "../morbid-definition.ts",
+  schemas: ["information_schema"],
 });
+
+// TODO: build migrator

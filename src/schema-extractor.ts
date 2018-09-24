@@ -4,8 +4,8 @@ import { ExtractedColumn, ExtractedIndex, ExtractedSchema, ExtractedTable, Extra
 import { Queries } from "./static-queries";
 export class SchemaExtractor {
   constructor(private pool: pg.Pool) { }
-  public async extract(destination: string) {
-    const gatheredSchemas = await new Queries(this.pool).gather({});
+  public async extract(destination: string, schemas: string[]) {
+    const gatheredSchemas = await new Queries(this.pool).gather({schemas});
 
     const lines = [
       `

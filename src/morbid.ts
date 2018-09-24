@@ -15,8 +15,9 @@ export class Morbid {
    */
   public async extractSchema(params: {
     destinationFile: string;
+    schemas: string[];
   }) {
-    await new SchemaExtractor(this.pool).extract(params.destinationFile);
+    await new SchemaExtractor(this.pool).extract(params.destinationFile, params.schemas);
   }
   /**
    *

@@ -33,11 +33,17 @@ const qb = morbid.querybuilder(Def);
 
 const schemaQb = qb.using("information_schema");
 
-schemaQb.fromTable("tables").where({
-  tables: {
-    table_name: "tables",
-    table_type: "VIEW",
-  },
-}).selectColumns({
-  tables: ["table_name", "table_type", "table_schema"],
-}).run().then(r => console.log(r)).catch(e => console.log(e));
+schemaQb
+  .fromTable("tables")
+  .where({
+    tables: {
+      table_name: "tables",
+      table_type: "VIEW",
+    },
+  }).selectColumns({
+    tables: ["table_name", "table_type", "table_schema", "is_typed"],
+  })
+  .run()
+  .then(r => console.log(r))
+  .catch(e => console.log(e))
+  .then(() => process.exit(0));

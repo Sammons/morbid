@@ -1,167 +1,188 @@
-/**
- * This is the part where we take a generated definition,
- * and extrapolate the querybuilder type
- */
+import * as PG from './pg-types';
+import { StringKeys, OneOrMore } from "./common-types";
 
-export type StringKeys<T> = Exclude<keyof T, number | symbol>;
-// exact string
-const s = <Strings extends string[]>(...strings: Strings) => strings[0] as Strings[0];
-// exact tuple
-const l = <Strings extends string[]>(...strings: Strings) => strings as Strings;
-// bool as "T" or "F"
-const b = <Strings extends Array<("T" | "F")>>(...strings: Strings) => strings[0] as Strings[0];
 
-// used to convert a value like "text" into a type e.g. number
-type DefaultTypeMap = {
-  varchar: string;
-  "character varying": string;
-  "\"char\"": string;
-  text: string;
-  integer: number;
-  "timestamp with time zone": Date,
-  name: string;
-  int4: number;
-  int2: number;
-  jsonb: {};
-  json: {};
-};
-type PG_Types = keyof DefaultTypeMap;
+type AllSchemaNamesInDef<Def> = Def extends { schemas: infer Schemas }
+  ? StringKeys<Schemas>
+  : never;
 
-// exact pg_type name
-const t = <Strings extends Array<(PG_Types)>>(...strings: Strings) => strings[0] as Strings[0];
+type AllSchemasInDef<Def> = Def extends { schemas: infer Schemas } ? Schemas : never;
 
-type InferColumns<T, TypeOverrides> = T extends { columns: infer Cols } ? {
-  [ColumnName in StringKeys<Cols>]: Cols[ColumnName] extends {
-    type: infer ColType;
-    nullable: infer Nullable;
-  } ? {
-    name: ColumnName;
-    typename: TypeOverrides extends { [Key in ColumnName]: infer Override }
-    ? "overridden"
-    : ColType
-    type: TypeOverrides extends { [Key in ColumnName]: infer Override }
-    ? Override
-    : (
-      ColType extends StringKeys<DefaultTypeMap>
-      ? DefaultTypeMap[ColType]
-      : "unknown"
-    )
-    nullable: Nullable;
-  } : never;
-} : never;
+type SchemaInDef<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+  AllSchemasInDef<Def> extends { [SpecificSchemaName in SchemaName]: infer SpecificSchema }
+  ? SpecificSchema
+  : never;
 
-type InferIndices<T> = T extends { indices: infer Indices } ? {
-  [IndexName in StringKeys<Indices>]: Indices[IndexName] extends {
-    struct: infer IndexStruct;
-    unique: infer UniqueIndex;
-    columns: infer IndexColumns;
-  } ? {
-    name: IndexName;
-    struct: IndexStruct;
-    unique: UniqueIndex;
-    columns: IndexColumns;
-  } : never;
-} : never;
+type AllTablesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+  SchemaInDef<Def, SchemaName> extends { tables: infer Tables }
+  ? Tables
+  : never;
 
-type InferTables<T, C> = T extends { tables: infer Tables } ? {
-  [TableName in StringKeys<Tables>]: {
-    name: TableName;
-    columns: InferColumns<Tables[TableName], C extends {
-      [OverrideTableName in TableName]: infer OverriddenTypes
-    } ? OverriddenTypes : {}>;
-    indices: InferIndices<Tables[TableName]>;
+type AllTableNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+  StringKeys<AllTablesInSchema<Def, SchemaName>>;
+
+type AllViewsInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+  SchemaInDef<Def, SchemaName> extends { views: infer Views }
+  ? Views
+  : never;
+
+type AllViewNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+  StringKeys<AllViewsInSchema<Def, SchemaName>>;
+
+type AllViewOrTableNamesInSchema<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>
+  > =
+  | StringKeys<AllTablesInSchema<Def, SchemaName>>
+  | StringKeys<AllViewsInSchema<Def, SchemaName>>;
+
+export type AllViewOrTableNamesInDef<
+  Def
+> = AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>
+
+type ViewInSchema<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewName extends AllViewNamesInSchema<Def, SchemaName>
+  > =
+  AllViewsInSchema<Def, SchemaName> extends { [SpecificView in ViewName]: infer View }
+  ? View
+  : never;
+
+type TableInSchema<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  TableName extends AllTableNamesInSchema<Def, SchemaName>
+  > =
+  AllTablesInSchema<Def, SchemaName> extends { [SpecificTableName in TableName]: infer Table }
+  ? Table
+  : never;
+
+type ViewOrTableInSchema<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>
+  > =
+  ViewOrTableName extends AllViewNamesInSchema<Def, SchemaName>
+  ? ViewInSchema<Def, SchemaName, ViewOrTableName>
+  : ViewOrTableName extends AllTableNamesInSchema<Def, SchemaName>
+  ? TableInSchema<Def, SchemaName, ViewOrTableName>
+  : never;
+
+
+type AllColumnsInSchemaViewOrTable<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>
+  > = ViewOrTableInSchema<Def, SchemaName, ViewOrTableName> extends {
+    columns: infer Columns
   }
-} : never;
+  ? Columns
+  : never;
 
-type InferViews<T, C> = T extends { views: infer Views } ? {
-  [TableName in StringKeys<Views>]: {
-    name: TableName;
-    columns: InferColumns<Views[TableName], C extends {
-      [OverrideTableName in TableName]: infer OverriddenTypes
-    } ? OverriddenTypes : {}>;
+type AllColumnNamesInSchemaViewOrTable<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>
+  > = StringKeys<AllColumnsInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>>
+
+type ColumnInSchemaViewOrTable<
+  Def,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
+  ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
+  > = AllColumnsInSchemaViewOrTable<Def, SchemaName, ViewOrTableName> extends {
+    [SpecificColumnName in ColumnName]: infer Column
   }
-} : never;
-
-export type InferSchema<T, C> = {
-  [SchemaName in StringKeys<T>]: {
-    name: SchemaName;
-    tables: InferTables<T[SchemaName], C extends {
-      [Key in SchemaName]: infer Custom
-    } ? Custom : {}>;
-    views: InferViews<T[SchemaName], C extends {
-      [Key in SchemaName]: infer Custom
-    } ? Custom : {}>;
-  }
-};
-
-export type CustomTypeSignature<T> = T extends { schemas: infer S } ? {
-  [Key in StringKeys<S>]?: S[Key] extends { tables: infer Tables } ? {
-    [TableName in StringKeys<Tables>]?: Tables[TableName] extends {
-      columns: infer Columns;
-    } ? {
-      [ColumnName in StringKeys<Columns>]?: Columns[ColumnName] extends { type: infer Type } ? any : never
-    } : never
-  } : never;
-} : never;
-
-export type GetTableOrView<Schema> =
-  (Schema extends { tables: infer Tables } ? StringKeys<Tables> : never) |
-  (Schema extends { views: infer Views } ? StringKeys<Views> : never);
-
-export type GetTableOrViewType<Schema, Name> =
-  (Schema extends { tables: infer Tables }
-    ? Name extends StringKeys<Tables>
-    ? Tables[Name] : never
-    : never
-  ) |
-  (Schema extends { views: infer Views }
-    ? Name extends StringKeys<Views>
-    ? Views[Name] : never
-    : never
-  );
-
-export type GetColumnJSType<Column> = Column extends { type: infer Type }
-  ? Type | Type[] | (
-    Column extends { nullable: "T" } ? null : Type
-  )
+  ? Column
   : never;
 
-export type GetFlatColumnJSType<Column> = Column extends { type: infer Type }
-  ? Type | (
-    Column extends { nullable: "T" } ? null : Type
-  )
-  : never;
-
-export type GetColumnJSTypeByColName<Schema, Table, Name extends string> =
-  GetTableOrViewType<Schema, Table> extends { columns: infer Columns }
-  ? Columns extends { [Column in Name]: infer ColType }
-  ? GetFlatColumnJSType<ColType>
-  : never
-  : never;
-
-export type WhereStart<Schema, TargetNames extends string> = {
-
-};
-
-export type GetSchemas<T> = T extends { schemas: infer S } ? StringKeys<S> : never;
-export type SchemaType<T, SchemaName> = T extends { schemas: infer S }
-  ? SchemaName extends StringKeys<S> ? S[SchemaName] : never
-  : never;
-
-export type OneOrMore<T> = ({
-  [K in keyof T]: { [SubK in K]: T[K] } & { [OtherK in Exclude<keyof T, K>]?: T[OtherK] }
-})[keyof T];
-
-export type WhereLiteral<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
-  columns: infer Columns,
-}
-  ? OneOrMore<{
-    [ColumnName in StringKeys<Columns>]: GetColumnJSType<Columns[ColumnName]>
+type Customizer<Def> = Partial<{
+  [SchemaName in AllSchemaNamesInDef<Def>]: OneOrMore<{
+    [TableName in AllTableNamesInSchema<Def, SchemaName>]: OneOrMore<{
+      [ColumnName in AllColumnNamesInSchemaViewOrTable<Def, SchemaName, TableName>]: any
+    }>
   }>
-  : never;
+}>
 
-export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
-  columns: infer Columns,
+type AllSchemaNamesInCustomizer<Def, Cust extends Customizer<Def>> = StringKeys<Cust>;
+type CustomizedSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>
+> = Cust extends {
+  [SpecificSchemaName in SchemaName]: infer CustomizedSchema
 }
-  ? Array<StringKeys<Columns>>
-  : never;
+? CustomizedSchema
+: never;
+
+type AllCustomizedTableOrViewNamesInSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>
+> = StringKeys<CustomizedSchema<Def, Cust, SchemaName>>
+
+type CustomizedTableOrViewInSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>
+> = CustomizedSchema<Def, Cust, SchemaName> extends {
+  [SpecificName in TableOrViewName]: infer CustomizedTableOrView
+}
+? CustomizedTableOrView
+: never;
+
+type AllColumnNamesInCustomizedTableOrViewInSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>
+> = StringKeys<CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName>>;
+
+type CustomizedColumnInSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
+  ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, TableOrViewName>
+> = CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName> extends {
+  [SpecificColumnName in ColumnName]: infer CustomizedColumn
+} 
+? CustomizedColumn
+: never;
+
+type JSTypeForColumnInTableOrViewInSchema<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
+  ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
+> =
+  ColumnInSchemaViewOrTable<Def, SchemaName, ViewOrTableName, ColumnName> extends {
+    type: infer Type;
+    nullable: infer Nullable;
+  }
+  ? (Type extends PG.TypeNames ? PG.TypeMap[Type] : 'unknown') |
+    (Nullable extends "T" ? null : Type)
+  : never
+
+type SchemaViewOrTableRowShape<
+Def,
+Cust extends Customizer<Def>,
+SchemaName extends AllSchemaNamesInDef<Def>,
+ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
+ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
+> = {
+  [Column in AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>]:
+    JSTypeForColumnInTableOrViewInSchema<Def, Cust, SchemaName, ViewOrTableName, ColumnName>
+}
+
+export type SchemaIgnorantViewOrTableRowShape<
+Def,
+Cust extends Customizer<Def>,
+ViewOrTableName extends AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>,
+> = {
+  [ColumnName in AllColumnNamesInSchemaViewOrTable<Def, AllSchemaNamesInDef<Def>, ViewOrTableName>]:
+    JSTypeForColumnInTableOrViewInSchema<Def, Cust, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName>
+}

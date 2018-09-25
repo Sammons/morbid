@@ -2,6 +2,16 @@ import * as fs from "fs";
 import * as pg from "pg";
 import { ExtractedColumn, ExtractedIndex, ExtractedSchema, ExtractedTable, ExtractedView } from "./extraction-interfaces";
 import { Queries } from "./static-queries";
+const S = (value: string | boolean | Array<string>): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(S).join(', ')}]`;
+  }
+  if (typeof value === 'string') {
+    const str = value.replace(/"/gm, "\\\"")
+    return `"${str}" as "${str}"`
+  }
+  return S(value ? "T" : "F");
+};
 export class SchemaExtractor {
   constructor(private pool: pg.Pool) { }
   public async extract(destination: string, schemas: string[]) {
@@ -10,12 +20,6 @@ export class SchemaExtractor {
     const lines = [
       `
 // this is a generated file.
-// exact string
-const s = <Strings extends string[]>(...strings: Strings) => strings[0] as Strings[0];
-// exact tuple
-const l = <Strings extends string[]>(...strings: Strings) => strings as Strings;
-// bool as "T" or "F"
-const b = <Strings extends Array<("T" | "F")>>(...strings: Strings) => strings[0] as Strings[0];
 
 export const Def = {`,
       `  schemas: {`,
@@ -26,32 +30,34 @@ export const Def = {`,
     fs.writeFileSync(destination, lines);
   }
   private renderColumn(name: string, extract: ExtractedColumn) {
+    const nullable = extract.nullable ? "T" : "F";
     return [
       `            ${name}: {`,
-      `              name: s("${name}"),`,
-      `              type: s("${extract.type.replace(/"/gm, "\\\"")}"),`,
-      `              nullable: b("${extract.nullable ? "T" : "F"}"),`,
+      `              name: ${S(name)},`,
+      `              type: ${S(extract.type)},`,
+      `              nullable: ${S(nullable)},`,
       `            },`,
     ].join("\n");
   }
   private renderIndex(name: string, extract: ExtractedIndex) {
     return [
       `            ${name}: {`,
-      `              name: s("${name}"),`,
-      `              struct: s("${extract.struct}"),`,
-      `              unique: b("${extract.unique}"),`,
-      `              columns: l(${extract.cols.map(c => `"${c}"`).join(", ")}),`,
+      `              name: ${S(name)},`,
+      `              struct: ${S(extract.struct)},`,
+      `              unique: ${S(extract.unique)},`,
+      `              columns: ${S(extract.cols)},`,
       `            },`,
     ].join("\n");
   }
   private renderTable(name: string, extract: ExtractedTable) {
     return [
       `        ${name}: {`,
-      `          name: s("${name}"),`,
+      `          name: ${S(name)},`,
       `          columns: {`,
       ...extract.columns.map(c => this.renderColumn(c.columnname, c)),
       `          },`,
       `          indices: {`,
+      ...extract.indices.map(i => this.renderIndex(i.indexname, i)),
       `          },`,
       `        },`,
     ].join("\n");
@@ -59,11 +65,9 @@ export const Def = {`,
   private renderView(name: string, extract: ExtractedView) {
     return [
       `        ${name}: {`,
-      `          name: s("${name}"),`,
+      `          name: ${S(name)},`,
       `          columns: {`,
       ...extract.columns.map(c => this.renderColumn(c.columnname, c)),
-      `          },`,
-      `          indices: {`,
       `          },`,
       `        },`,
     ].join("\n");
@@ -71,7 +75,7 @@ export const Def = {`,
   private renderSchema(name: string, extract: ExtractedSchema) {
     return [
       `    ${name}: {`,
-      `      name: s("${name}"),`,
+      `      name: ${S(name)},`,
       `      tables: {`,
       ...extract.tables.map(t => this.renderTable(t.tablename, t)),
       `      },`,

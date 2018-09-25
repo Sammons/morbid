@@ -44,6 +44,6 @@ schemaQb
     tables: ["table_name", "table_type", "table_schema", "is_typed"],
   })
   .run()
-  .then(r => console.log(r))
-  .catch(e => console.log(e))
+  .then(console.log)
+  .catch(console.log)
   .then(() => process.exit(0));

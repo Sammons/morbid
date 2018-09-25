@@ -13,6 +13,9 @@ To provide strong safety in code that interacts with the database, and to do so 
 We will:
 
 * Strive to be simple, but not at the cost of breadth.
+  + Even if something is not documented, it should work the way you would think it does
+  + We won't give up on fun things like window functions in SQL just to make the api more minimal
+  + We will still try to keep the api more minimal :)
 * Encourage declarative, but clear programming.
 * Provide the strongest types possible.
   + If it compiles, it should work as intended.

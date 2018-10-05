@@ -2,7 +2,7 @@ import * as PG from './pg-types';
 import { StringKeys, OneOrMore } from "./common-types";
 
 
-type AllSchemaNamesInDef<Def> = Def extends { schemas: infer Schemas }
+export type AllSchemaNamesInDef<Def> = Def extends { schemas: infer Schemas }
   ? StringKeys<Schemas>
   : never;
 
@@ -18,7 +18,7 @@ type AllTablesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
   ? Tables
   : never;
 
-type AllTableNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+export type AllTableNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
   StringKeys<AllTablesInSchema<Def, SchemaName>>;
 
 type AllViewsInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
@@ -26,7 +26,7 @@ type AllViewsInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
   ? Views
   : never;
 
-type AllViewNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
+export type AllViewNamesInSchema<Def, SchemaName extends AllSchemaNamesInDef<Def>> =
   StringKeys<AllViewsInSchema<Def, SchemaName>>;
 
 type AllViewOrTableNamesInSchema<
@@ -38,7 +38,7 @@ type AllViewOrTableNamesInSchema<
 
 export type AllViewOrTableNamesInDef<
   Def
-> = AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>
+  > = AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>
 
 type ViewInSchema<
   Def,
@@ -69,6 +69,9 @@ type ViewOrTableInSchema<
   ? TableInSchema<Def, SchemaName, ViewOrTableName>
   : never;
 
+export type ViewsInDef<Def> = AllViewsInSchema<Def, AllSchemaNamesInDef<Def>>;
+export type TablesInDef<Def> = AllTablesInSchema<Def, AllSchemaNamesInDef<Def>>;
+
 
 type AllColumnsInSchemaViewOrTable<
   Def,
@@ -97,7 +100,7 @@ type ColumnInSchemaViewOrTable<
   ? Column
   : never;
 
-type Customizer<Def> = Partial<{
+export type Customizer<Def> = Partial<{
   [SchemaName in AllSchemaNamesInDef<Def>]: OneOrMore<{
     [TableName in AllTableNamesInSchema<Def, SchemaName>]: OneOrMore<{
       [ColumnName in AllColumnNamesInSchemaViewOrTable<Def, SchemaName, TableName>]: any
@@ -110,35 +113,35 @@ type CustomizedSchema<
   Def,
   Cust extends Customizer<Def>,
   SchemaName extends AllSchemaNamesInDef<Def>
-> = Cust extends {
-  [SpecificSchemaName in SchemaName]: infer CustomizedSchema
-}
-? CustomizedSchema
-: never;
+  > = Cust extends {
+    [SpecificSchemaName in SchemaName]: infer CustomizedSchema
+  }
+  ? CustomizedSchema
+  : never;
 
 type AllCustomizedTableOrViewNamesInSchema<
   Def,
   Cust extends Customizer<Def>,
   SchemaName extends AllSchemaNamesInDef<Def>
-> = StringKeys<CustomizedSchema<Def, Cust, SchemaName>>
+  > = StringKeys<CustomizedSchema<Def, Cust, SchemaName>>
 
 type CustomizedTableOrViewInSchema<
   Def,
   Cust extends Customizer<Def>,
   SchemaName extends AllSchemaNamesInDef<Def>,
   TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>
-> = CustomizedSchema<Def, Cust, SchemaName> extends {
-  [SpecificName in TableOrViewName]: infer CustomizedTableOrView
-}
-? CustomizedTableOrView
-: never;
+  > = CustomizedSchema<Def, Cust, SchemaName> extends {
+    [SpecificName in TableOrViewName]: infer CustomizedTableOrView
+  }
+  ? CustomizedTableOrView
+  : never;
 
 type AllColumnNamesInCustomizedTableOrViewInSchema<
   Def,
   Cust extends Customizer<Def>,
   SchemaName extends AllSchemaNamesInDef<Def>,
   TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>
-> = StringKeys<CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName>>;
+  > = StringKeys<CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName>>;
 
 type CustomizedColumnInSchema<
   Def,
@@ -146,43 +149,76 @@ type CustomizedColumnInSchema<
   SchemaName extends AllSchemaNamesInDef<Def>,
   TableOrViewName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
   ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, TableOrViewName>
-> = CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName> extends {
-  [SpecificColumnName in ColumnName]: infer CustomizedColumn
-} 
-? CustomizedColumn
-: never;
+  > = CustomizedTableOrViewInSchema<Def, Cust, SchemaName, TableOrViewName> extends {
+    [SpecificColumnName in ColumnName]: infer CustomizedColumn
+  }
+  ? CustomizedColumn
+  : never;
 
-type JSTypeForColumnInTableOrViewInSchema<
+export type JSTypeForColumnInTableOrViewInSchema<
   Def,
   Cust extends Customizer<Def>,
   SchemaName extends AllSchemaNamesInDef<Def>,
   ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
   ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
-> =
-  ColumnInSchemaViewOrTable<Def, SchemaName, ViewOrTableName, ColumnName> extends {
+  > =
+  CustomizedColumnInSchema<Def, Cust, SchemaName, ViewOrTableName, ColumnName> extends undefined
+  ? ColumnInSchemaViewOrTable<Def, SchemaName, ViewOrTableName, ColumnName> extends {
     type: infer Type;
     nullable: infer Nullable;
   }
   ? (Type extends PG.TypeNames ? PG.TypeMap[Type] : 'unknown') |
-    (Nullable extends "T" ? null : Type)
+  (Nullable extends "T" ? null : Type)
+  : CustomizedColumnInSchema<Def, Cust, SchemaName, ViewOrTableName, ColumnName> 
   : never
 
-type SchemaViewOrTableRowShape<
+export type JSTypeForColumnInTableOrView<
 Def,
 Cust extends Customizer<Def>,
-SchemaName extends AllSchemaNamesInDef<Def>,
-ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
-ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
-> = {
-  [Column in AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>]:
+ViewOrTableName extends AllViewOrTableNamesInDef<Def>,
+ColumnName extends AllColumnNamesInViewOrTable<Def, ViewOrTableName>
+> =
+CustomizedColumnInSchema<Def, Cust, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName> extends undefined
+? ColumnInSchemaViewOrTable<Def, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName> extends {
+  type: infer Type;
+  nullable: infer Nullable;
+}
+? (Type extends PG.TypeNames ? PG.TypeMap[Type] : 'unknown') |
+(Nullable extends "T" ? null : Type)
+: CustomizedColumnInSchema<Def, Cust, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName> 
+: never
+
+type SchemaViewOrTableRowShape<
+  Def,
+  Cust extends Customizer<Def>,
+  SchemaName extends AllSchemaNamesInDef<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, SchemaName>,
+  ColumnName extends AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>
+  > = {
+    [Column in AllColumnNamesInSchemaViewOrTable<Def, SchemaName, ViewOrTableName>]:
     JSTypeForColumnInTableOrViewInSchema<Def, Cust, SchemaName, ViewOrTableName, ColumnName>
+  }
+
+export type BasicWhere<
+Def, 
+Cust extends Customizer<Def>,
+ViewOrTableName extends AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>
+> = {
+  [ColumnName in AllColumnNamesInViewOrTable<Def, ViewOrTableName>]: JSTypeForColumnInTableOrViewInSchema<
+    Def, Cust, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName
+  >
 }
 
-export type SchemaIgnorantViewOrTableRowShape<
+export type AllColumnNamesInViewOrTable<
 Def,
-Cust extends Customizer<Def>,
-ViewOrTableName extends AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>,
-> = {
-  [ColumnName in AllColumnNamesInSchemaViewOrTable<Def, AllSchemaNamesInDef<Def>, ViewOrTableName>]:
+ViewOrTableName extends AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>
+> = AllColumnNamesInSchemaViewOrTable<Def, AllSchemaNamesInDef<Def>, ViewOrTableName>;
+
+export type SchemaIgnorantViewOrTableRowShape<
+  Def,
+  Cust extends Customizer<Def>,
+  ViewOrTableName extends AllViewOrTableNamesInSchema<Def, AllSchemaNamesInDef<Def>>,
+  > = {
+    [ColumnName in AllColumnNamesInSchemaViewOrTable<Def, AllSchemaNamesInDef<Def>, ViewOrTableName>]:
     JSTypeForColumnInTableOrViewInSchema<Def, Cust, AllSchemaNamesInDef<Def>, ViewOrTableName, ColumnName>
-}
+  }

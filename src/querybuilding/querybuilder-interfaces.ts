@@ -43,7 +43,7 @@ type ConditionTypes = typeof ConditionTypes;
 const ConditionElementTypes = StrEnum("Literal", "Expression", "SubCondition", "Subquery");
 type ConditionElementTypes = typeof ConditionElementTypes;
 
-type ConditionExpression = {
+type ExpressionWrapper = {
   type: ConditionElementTypes["Expression"]
   value: {
     target: string;
@@ -52,34 +52,26 @@ type ConditionExpression = {
   }
 }
 
-type ConditionSubquery = {
+type SubqueryWrapper = {
   type: ConditionElementTypes["Subquery"];
   value: QueryTypeInterfaces["select"];
 }
 
 // such a string 'hello'::TEXT or a number 1::INT
-type ConditionLiteral = {
+type LiteralWrapper = {
   type: ConditionElementTypes["Literal"]
   value: string;
   pgtype: string;
 };
 
-// such as a table.column
-type SubCondition = {
-  type: ConditionElementTypes["SubCondition"]
-  value: Condition
-  // TODO: need to ellaborate on this. recurses to the top again
-}
-
-type ValueWithoutAlias =
-  | ConditionLiteral
-  | ConditionExpression
-  | SubCondition
-  | ConditionSubquery
+type ValueWrapper =
+  | LiteralWrapper // 'hello'
+  | ExpressionWrapper // table.column
+  | SubqueryWrapper // (select 'hello')
   | Condition;
 
-type ValueWithAlias = ValueWithoutAlias & { alias: string; };
-type ColumnValues = ConditionExpression;
+type ConditionValueWithAlias = ValueWrapper & { alias: string; };
+type ColumnValues = ExpressionWrapper;
 
 const OperatorTypes = StrEnum("Simple", "Complex")
 type OperatorTypes = typeof OperatorTypes;
@@ -95,20 +87,20 @@ type Operator = {
 type BinaryCondition = {
   type: ConditionTypes["Binary"];
   operator: Operator;
-  left: ValueWithoutAlias;
-  right: ValueWithoutAlias;
+  left: ValueWrapper;
+  right: ValueWrapper;
 };
 
 type UnaryCondition = {
   type: ConditionTypes["Unary"];
-  value: ValueWithoutAlias;
+  value: ValueWrapper;
 }
 
 type Condition = BinaryCondition | UnaryCondition;
 
 type QueryTypeInterfaces = {
   insert: {
-    values: ValueWithAlias // the alias is the target column name in this context
+    values: ConditionValueWithAlias // the alias is the target column name in this context
     into: UpdateableTarget;
     from: FromTarget | null;
     joins: JoinTarget[];
@@ -118,7 +110,7 @@ type QueryTypeInterfaces = {
     update: UpdateableTarget;
     from: FromTarget | null;
     joins: JoinTarget[];
-    set: ValueWithoutAlias[];
+    set: ValueWrapper[];
     where: Condition;
     returning: ColumnValues[];
   };
@@ -126,7 +118,7 @@ type QueryTypeInterfaces = {
     from: FromTarget;
     joins: JoinTarget[];
     where: Condition;
-    select: ValueWithAlias[];
+    select: ConditionValueWithAlias[];
   };
   delete: {
     from: FromTarget;

@@ -48,7 +48,7 @@ class InnerJoinAsOnCol<
   SelectedColumn extends ColumnsFromAliasMap<Def, AliasMap, SelectedAlias>
   > {
   is<V extends ColumnJSTypeFromAliasMap<Def, Cust, AliasMap, SelectedAlias, SelectedColumn>>(v: V) {
-    
+    return new InnerJoinAsContinuation<Def, Cust, TableOrViewName, KnownAliases, CurrentAlias, AliasMap>()
   }
 }
 
@@ -94,6 +94,34 @@ type TInnerJoinAsOnCol<
   SelectedAlias,
   SelectedColumn
   >
+
+class InnerJoinAsContinuation<
+  Def,
+  Cust extends T.Customizer<Def>,
+  TableOrViewName extends T.AllViewOrTableNamesInDef<Def>,
+  KnownAliases extends string,
+  CurrentAlias extends string,
+  AliasMap
+  > {
+  constructor() { }
+  get onCol(): {
+    [K in KnownAliases]: {
+      [C in ColumnsFromAliasMap<Def, AliasMap, K>]: TInnerJoinAsOnCol<
+      Def,
+      Cust,
+      TableOrViewName,
+      KnownAliases,
+      CurrentAlias,
+      AliasMap,
+      K,
+      C
+      >
+    }
+  } {
+    return {} as any;
+  }
+
+}
 
 class InnerJoinAs<
   Def,
@@ -185,6 +213,7 @@ function Wrap<
 Wrap(Def)
   .sequences.as('x')
   .innerJoin.routines.as("y")
-  .onCol.x.data_type.
+  .onCol.x.numeric_precision.is(2)
+  .onCol.y.last_altered.is(null)
 
 

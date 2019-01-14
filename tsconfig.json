@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "noUnusedLocals": true,
     "target": "es2018",
     "allowUnreachableCode": false,
     "alwaysStrict": true,
@@ -13,12 +14,14 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "types": [
-      "mocha",
+      "jest",
       "node"
     ]
   },
   "exclude": [
     "node_modules",
-    "built"
+    "samples",
+    "built",
+    "old"
   ]
 }

@@ -1,5 +1,28 @@
 {
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "typescript.tsdk": "./node_modules/typescript/lib"
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "tslint.autoFixOnSave": true,
+  "tslint.jsEnable": true,
+  "tslint.run": "onType",
+  "tslint.alwaysShowRuleFailuresAsWarnings": true,
+  "editor.formatOnSave": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true
+  },
+  "tslint.exclude": "node_modules",
+  "npm.exclude": "node_modules",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true
+  }
 }

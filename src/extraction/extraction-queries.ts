@@ -1,5 +1,5 @@
-import * as pg from "pg";
-import { ExtractedIndex, ExtractedSchema, ExtractedTable, ExtractedView } from "./extraction-interfaces";
+import * as pg from 'pg';
+import { ExtractedSchema, ExtractedTable, ExtractedView } from './extraction-interfaces';
 
 export class Queries {
   constructor(private pool: pg.Pool) { }
@@ -27,7 +27,7 @@ export class Queries {
     return Array.from(schemas);
   }
   private detectSchemasSQL() {
-    return `select distinct schemaname from pg_tables`;
+    return 'select distinct schemaname from pg_tables';
   }
   private async gatherAllTables(options: { schema?: string; table?: string }) {
     const { rows } = await this.pool.query(this.gatherAllTablesSQL(options), [options.schema]);
@@ -65,13 +65,13 @@ export class Queries {
       from pg_tables t
     `;
     if (options.schema && options.table) {
-      return sql + `where schemaname = $1::TEXT and tablename = $2::TEXT`;
+      return sql + 'where schemaname = $1::TEXT and tablename = $2::TEXT';
     }
     if (options.table) {
-      return sql + `where tablename = $1::TEXT`;
+      return sql + 'where tablename = $1::TEXT';
     }
     if (options.schema) {
-      return sql + `where schemaname = $1::TEXT`;
+      return sql + 'where schemaname = $1::TEXT';
     }
     return sql;
   }
@@ -96,16 +96,17 @@ export class Queries {
     on pv.schemaname = v.table_schema and pv.viewname = v.table_name
     `;
     if (options.schema && options.view) {
-      return sql + `where v.table_schema = $1::TEXT and v.table_name = $2::TEXT`;
+      return sql + 'where v.table_schema = $1::TEXT and v.table_name = $2::TEXT';
     }
     if (options.view) {
-      return sql + `where v.table_name = $1::TEXT`;
+      return sql + 'where v.table_name = $1::TEXT';
     }
     if (options.schema) {
-      return sql + `where v.table_schema = $1::TEXT`;
+      return sql + 'where v.table_schema = $1::TEXT';
     }
     return sql;
   }
+  /*
   private gatherProceduresSQL() {
     // https://www.postgresql.org/docs/8.4/static/catalog-pg-type.html
     return `
@@ -145,4 +146,5 @@ export class Queries {
     from pg_proc p
     `;
   }
+  */
 }

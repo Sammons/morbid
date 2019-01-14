@@ -1,7 +1,15 @@
 {
   "$schema": "http://json.schemastore.org/tslint",
-  "extends": "tslint:latest",
   "rules": {
+    "semicolon": [
+      true
+    ],
+    "quotemark": [
+      true,
+      "avoid-template",
+      "single",
+      "backtick"
+    ],
     "await-promise": true,
     "strict-boolean-expressions": [
       true,
@@ -30,7 +38,8 @@
       false
     ],
     "max-classes-per-file": [
-      false
+      true,
+      3
     ],
     "no-submodule-imports": [
       false
@@ -55,7 +64,7 @@
           "imports": "never"
         },
         "esSpecCompliant": true
-      },
+      }
     ]
   }
 }

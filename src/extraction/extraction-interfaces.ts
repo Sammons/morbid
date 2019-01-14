@@ -2,7 +2,7 @@
 export interface ExtractedIndex {
   indexname: string;
   unique: boolean;
-  struct: "BTREE" | "HASH" | "GIST" | "GIN";
+  struct: 'BTREE' | 'HASH' | 'GIST' | 'GIN';
   cols: string[];
 }
 
@@ -39,7 +39,7 @@ export interface ExtractedSchema {
   views: ExtractedView[];
 }
 
-type TypeCategory = "A" | "B" | "C" | "D" | "E" | "G" | "I" | "N" | "P" | "S" | "T" | "U" | "V" | "X";
+type TypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'S' | 'T' | 'U' | 'V' | 'X';
 
 export interface ExtractedType {
   typname: string;

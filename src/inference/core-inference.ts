@@ -4,31 +4,21 @@
  */
 
 export type StringKeys<T> = Exclude<keyof T, number | symbol>;
-// exact string
-const s = <Strings extends string[]>(...strings: Strings) => strings[0] as Strings[0];
-// exact tuple
-const l = <Strings extends string[]>(...strings: Strings) => strings as Strings;
-// bool as "T" or "F"
-const b = <Strings extends Array<("T" | "F")>>(...strings: Strings) => strings[0] as Strings[0];
 
 // used to convert a value like "text" into a type e.g. number
 type DefaultTypeMap = {
   varchar: string;
-  "character varying": string;
-  "\"char\"": string;
+  'character varying': string;
+  '"char"': string;
   text: string;
   integer: number;
-  "timestamp with time zone": Date,
+  'timestamp with time zone': Date,
   name: string;
   int4: number;
   int2: number;
   jsonb: {};
   json: {};
 };
-type PG_Types = keyof DefaultTypeMap;
-
-// exact pg_type name
-const t = <Strings extends Array<(PG_Types)>>(...strings: Strings) => strings[0] as Strings[0];
 
 type InferColumns<T, TypeOverrides> = T extends { columns: infer Cols } ? {
   [ColumnName in StringKeys<Cols>]: Cols[ColumnName] extends {
@@ -37,14 +27,14 @@ type InferColumns<T, TypeOverrides> = T extends { columns: infer Cols } ? {
   } ? {
     name: ColumnName;
     typename: TypeOverrides extends { [Key in ColumnName]: infer Override }
-    ? "overridden"
+    ? 'overridden'
     : ColType
     type: TypeOverrides extends { [Key in ColumnName]: infer Override }
     ? Override
     : (
       ColType extends StringKeys<DefaultTypeMap>
       ? DefaultTypeMap[ColType]
-      : "unknown"
+      : 'unknown'
     )
     nullable: Nullable;
   } : never;
@@ -122,13 +112,13 @@ export type GetTableOrViewType<Schema, Name> =
 
 export type GetColumnJSType<Column> = Column extends { type: infer Type }
   ? Type | Type[] | (
-    Column extends { nullable: "T" } ? null : Type
+    Column extends { nullable: 'T' } ? null : Type
   )
   : never;
 
 export type GetFlatColumnJSType<Column> = Column extends { type: infer Type }
   ? Type | (
-    Column extends { nullable: "T" } ? null : Type
+    Column extends { nullable: 'T' } ? null : Type
   )
   : never;
 

@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "command": "npm",
+  "args": [
+    "run",
+    "-s",
+  ],
+  "tasks": [
+    {
+      "label": "tslint-with-types",
+      "problemMatcher": "$tslint5"
+    }
+  ]
+}

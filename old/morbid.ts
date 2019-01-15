@@ -1,7 +1,7 @@
-import * as pg from "pg";
-import { CustomTypeSignature } from "./definition-inference";
-import { Wrap } from "./querybuilder";
-import { SchemaExtractor } from "./schema-extractor";
+import * as pg from 'pg';
+import { CustomTypeSignature } from '../src/inference/definition-inference';
+import { Wrap } from './querybuilder';
+import { SchemaExtractor } from './schema-extractor';
 
 export class Morbid {
   private pool: pg.Pool;

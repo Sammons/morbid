@@ -1,6 +1,6 @@
 import * as pg from 'pg';
-import * as setup from './setup/drop-and-setup-schema';
-import { config } from './test-config';
+import * as setup from '../setup/drop-and-setup-schema';
+import { config } from '../test-config';
 const poolCache: { [database: string]: pg.Pool } = {};
 
 export const connect = async (database: string = 'test') => {

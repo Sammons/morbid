@@ -4,12 +4,6 @@
  */
 
 export type StringKeys<T> = Exclude<keyof T, number | symbol>;
-// exact string
-const s = <Strings extends string[]>(...strings: Strings) => strings[0] as Strings[0];
-// exact tuple
-const l = <Strings extends string[]>(...strings: Strings) => strings as Strings;
-// bool as "T" or "F"
-const b = <Strings extends Array<('T' | 'F')>>(...strings: Strings) => strings[0] as Strings[0];
 
 // used to convert a value like "text" into a type e.g. number
 type DefaultTypeMap = {
@@ -25,10 +19,6 @@ type DefaultTypeMap = {
   jsonb: {};
   json: {};
 };
-type PG_Types = keyof DefaultTypeMap;
-
-// exact pg_type name
-const t = <Strings extends Array<(PG_Types)>>(...strings: Strings) => strings[0] as Strings[0];
 
 type InferColumns<T, TypeOverrides> = T extends { columns: infer Cols } ? {
   [ColumnName in StringKeys<Cols>]: Cols[ColumnName] extends {
@@ -81,6 +71,86 @@ type InferViews<T, C> = T extends { views: infer Views } ? {
     } ? OverriddenTypes : {}>;
   }
 } : never;
+export interface AnyDefinition {
+  schemas: {
+    [k: string]: {
+      tables: {
+        [t: string]: {
+          name: string; columns: {
+            [c: string]: {
+              name: string;
+            },
+          }
+        },
+      },
+      views: {
+        [t: string]: {
+          name: string; columns: {
+            [c: string]: {
+              name: string;
+            },
+          }
+        },
+      },
+    },
+  };
+}
+export interface AnyTableOrView {
+  name: string;
+  columns: {
+    [c: string]: {
+      name: string;
+      typename: string;
+      type: string;
+      nullable: string;
+    },
+  };
+}
+export type InferDefinition<T> =
+  T extends {
+    schemas: infer Schemas,
+  }
+  ? {
+    [Schema in StringKeys<Schemas>]: {
+      name: Schema
+      tables: Schemas[Schema] extends {
+        tables: infer Tables,
+      }
+      ? {
+        [Table in StringKeys<Tables>]: {
+          name: Table;
+          columns: InferColumns<Tables[Table], {}>
+        }
+      }
+      : never,
+      views: Schemas[Schema] extends {
+        views: infer Views,
+      }
+      ? {
+        [View in StringKeys<Views>]: {
+          name: View;
+          columns: InferColumns<Views[View], {}>
+        }
+      }
+      : never,
+    }
+  }
+  : never;
+// export type ExtractStringNamesAtLevel<T, L1 extends string, L2 extends string> =
+//   T extends { [K1 in L1]: infer O1 }
+//   ? O1 extends { [K2 in L2]: infer O2 }
+//   ? O2
+//   : O1
+//   : never;
+export type TableNames<D> =
+  D extends { schemas: infer Schemas }
+  ? {
+    [Schema in StringKeys<Schemas>]:
+    Schemas[Schema] extends { tables: infer Tables }
+    ? StringKeys<Tables>
+    : never
+  }[StringKeys<Schemas>]
+  : never;
 
 export type InferSchema<T, C> = {
   [SchemaName in StringKeys<T>]: {
@@ -120,7 +190,9 @@ export type GetTableOrViewType<Schema, Name> =
     : never
   );
 
-export type GetColumnJSType<Column> = Column extends { type: infer Type }
+export type GetAnyTableOrViewType//TODO: extract any table or view
+
+export; type GetColumnJSType<Column> = Column extends { type: infer Type }
   ? Type | Type[] | (
     Column extends { nullable: 'T' } ? null : Type
   )

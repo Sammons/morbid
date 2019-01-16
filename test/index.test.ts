@@ -33,4 +33,5 @@ describe('basic table builder', async () => {
     })
     .returning('data')
     .run();
+
 });

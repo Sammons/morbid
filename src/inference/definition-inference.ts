@@ -16,6 +16,7 @@ type DefaultTypeMap = {
   name: string;
   int4: number;
   int2: number;
+  // uuid: string;
   jsonb: {};
   json: {};
 };
@@ -190,47 +191,128 @@ export type GetTableOrViewType<Schema, Name> =
     : never
   );
 
-export type GetAnyTableOrViewType//TODO: extract any table or view
 
-export; type GetColumnJSType<Column> = Column extends { type: infer Type }
-  ? Type | Type[] | (
-    Column extends { nullable: 'T' } ? null : Type
+export type GetDefaultJSType<Column> =
+  (Column extends { type: infer Type }
+    ? Type extends string
+    ? DefaultTypeMap extends { [K in Type]: infer JSType; }
+    ? JSType | (Column extends { nullable: 'Y' } ? null : JSType)
+    : 'unknown'
+    : Type
+    : never);
+
+export type GetMappedJSType<Customizer, TableName extends string, Column> =
+  (
+    Column extends { name: infer ColName }
+    ? ColName extends string
+    ? Customizer extends { tables: { [T in TableName]: { [C in ColName]: infer CustomType } } }
+    ? CustomType | (Column extends { nullable: 'Y' } ? null : CustomType)
+    : Column extends { type: infer TypeName }
+    ? TypeName extends string
+    ? Customizer extends { __override__: { [K in TypeName]: infer CustomType } }
+    ? CustomType | (Column extends { nullable: 'Y' } ? null : CustomType)
+    : GetDefaultJSType<Column>
+    : GetDefaultJSType<Column>
+    : GetDefaultJSType<Column>
+    : never
+    : never
   )
-  : never;
-
-export type GetFlatColumnJSType<Column> = Column extends { type: infer Type }
-  ? Type | (
-    Column extends { nullable: 'T' } ? null : Type
-  )
-  : never;
-
-export type GetColumnJSTypeByColName<Schema, Table, Name extends string> =
-  GetTableOrViewType<Schema, Table> extends { columns: infer Columns }
-  ? Columns extends { [Column in Name]: infer ColType }
-  ? GetFlatColumnJSType<ColType>
-  : never
-  : never;
-
-export type WhereStart<Schema, TargetNames extends string> = {
-
-};
-
-export type GetSchemas<T> = T extends { schemas: infer S } ? StringKeys<S> : never;
-export type SchemaType<T, SchemaName> = T extends { schemas: infer S }
-  ? SchemaName extends StringKeys<S> ? S[SchemaName] : never
-  : never;
+  ;
 
 export type OneOrMore<T> = ({
   [K in keyof T]: { [SubK in K]: T[K] } & { [OtherK in Exclude<keyof T, K>]?: T[OtherK] }
 })[keyof T];
 
-export type WhereLiteral<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
-  columns: infer Columns,
-}
+
+export type AllTableOrViewNames<T> =
+  (T extends { schemas: infer Schemas }
+    ? Schemas extends {
+      [SchemaName in StringKeys<Schemas>]: {
+        tables: {
+          [tableName: string]: {
+            name: infer Name,
+          },
+        },
+      }
+    }
+    ? Name extends string ? Name : never
+    : never
+    : never)
+  |
+  (T extends { schemas: infer Schemas }
+    ? Schemas extends {
+      [SchemaName in StringKeys<Schemas>]: {
+        views: {
+          [tableName: string]: {
+            name: infer Name,
+          },
+        },
+      }
+    }
+    ? Name extends string ? Name : never
+    : never
+    : never)
+  ;
+
+export type InferTableWithoutSchema<T, TargetName extends string> =
+  T extends {
+    schemas: infer Schemas,
+  }
+  ? {
+    [SchemaName in StringKeys<Schemas>]: Schemas[SchemaName] extends {
+      tables: {
+        [TableName in TargetName]: infer Table
+      };
+    }
+    ? Table
+    : never
+  }[StringKeys<Schemas>]
+  : never;
+
+export type InferViewWithoutSchema<T, TargetName extends string> =
+  T extends {
+    schemas: infer Schemas,
+  }
+  ? {
+    [SchemaName in StringKeys<Schemas>]: Schemas[SchemaName] extends {
+      views: {
+        [TableName in TargetName]: infer Table
+      };
+    }
+    ? Table
+    : never
+  }[StringKeys<Schemas>]
+  : never;
+
+export type InferTableOrViewWithoutSchema<T, TargetName extends string> =
+  InferTableWithoutSchema<T, TargetName> |
+  InferViewWithoutSchema<T, TargetName>;
+
+
+
+export type SchemalessUpdateLiteral<T, C, TargetName extends string> =
+  InferTableOrViewWithoutSchema<T, TargetName> extends {
+    columns: infer Columns,
+  }
   ? OneOrMore<{
-    [ColumnName in StringKeys<Columns>]: GetColumnJSType<Columns[ColumnName]>
+    [ColumnName in StringKeys<Columns>]: GetMappedJSType<C, TargetName, Columns[ColumnName]>
   }>
   : never;
+
+export type Whereish<K> = Exclude<K, void> | Exclude<K, void>[];
+
+export type SchemalessWhereLiteral<T, C, TargetName extends string> =
+  InferTableOrViewWithoutSchema<T, TargetName> extends {
+    columns: infer Columns,
+  }
+  ? OneOrMore<{
+    [ColumnName in StringKeys<Columns>]:
+    GetMappedJSType<C, TargetName, Columns[ColumnName]> extends infer JSType
+    ? Whereish<JSType>
+    : never
+  }>
+  : never;
+
 
 export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
   columns: infer Columns,

@@ -1,6 +1,6 @@
 import * as pg from 'pg';
 import * as extractor from './extraction/schema-extractor';
-import { TableClientBuilder } from './interface/table-client-builder';
+import { MorbidTableClientBuilder } from './interface/table-client-builder';
 
 interface MorbidParams {
   pg: pg.ConnectionConfig;
@@ -24,7 +24,7 @@ export const Generate = async (params: MorbidParams) => {
  * The returned anonymous class can be new'd up into a database client
  * with intellisense and full type information (via typescript generics)
  */
-export class Morbid<T>{
+export class Morbid<T, C>{
   constructor(private definition: T, private connection: pg.ConnectionConfig) { }
-  tables = new TableClientBuilder(this.definition, this.connection).build();
+  tables = new MorbidTableClientBuilder<T, C>(this.definition, this.connection).build();
 }

@@ -288,7 +288,12 @@ export type InferTableOrViewWithoutSchema<T, TargetName extends string> =
   InferTableWithoutSchema<T, TargetName> |
   InferViewWithoutSchema<T, TargetName>;
 
-
+export type InferTableOrViewColumnNamesWithoutSchema<T, TargetName extends string> =
+  InferTableOrViewWithoutSchema<T, TargetName> extends {
+    columns: infer Columns,
+  }
+  ? StringKeys<Columns>
+  : never;
 
 export type SchemalessUpdateLiteral<T, C, TargetName extends string> =
   InferTableOrViewWithoutSchema<T, TargetName> extends {
@@ -313,6 +318,17 @@ export type SchemalessWhereLiteral<T, C, TargetName extends string> =
   }>
   : never;
 
+export type TableReturnShape<T, C, TargetName extends string> =
+  InferTableOrViewWithoutSchema<T, TargetName> extends {
+    columns: infer Columns,
+  }
+  ? {
+    [ColumnName in StringKeys<Columns>]:
+    GetMappedJSType<C, TargetName, Columns[ColumnName]> extends infer JSType
+    ? Exclude<JSType, undefined | void>
+    : never
+  }
+  : never;
 
 export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
   columns: infer Columns,

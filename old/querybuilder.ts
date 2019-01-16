@@ -1,22 +1,22 @@
-import * as pg from "pg";
-import * as Infer from "./definition-inference";
+import * as pg from 'pg';
+import * as Infer from '../src/inference/definition-inference';
 
 interface WhereCondition {
   source: {
-    type: "tableOrView";
+    type: 'tableOrView';
     tableOrView: string;
     schema: string;
     column: string;
   };
   target: {
-    type: "literal";
+    type: 'literal';
     value: any
   };
 }
 
 interface SelectColumn {
   source: {
-    type: "tableOrView";
+    type: 'tableOrView';
     tableOrView: string;
     schema: string;
     column: string;
@@ -25,7 +25,7 @@ interface SelectColumn {
 
 interface FromTarget {
   source: {
-    type: "fromTableOrView";
+    type: 'fromTableOrView';
     schema: string;
     name: string;
   };
@@ -38,20 +38,20 @@ function CompileQuery(params: {
   select: SelectColumn[];
 }) {
   const { froms, wheres, select, def } = params;
-  const primaryTarget = froms.find(f => f.source.type === "fromTableOrView");
+  const primaryTarget = froms.find(f => f.source.type === 'fromTableOrView');
   if (!primaryTarget) {
-    throw new Error("Missing from clause!");
+    throw new Error('Missing from clause!');
   }
-  let statement = "SELECT";
+  let statement = 'SELECT';
   select.forEach((selectColumn, i) => {
     statement += ` ${selectColumn.source.schema}.${selectColumn.source.tableOrView}.${selectColumn.source.column} as ` +
       ` "${selectColumn.source.schema}.${selectColumn.source.tableOrView}.${selectColumn.source.column}"`;
     if (i !== select.length - 1) {
-      statement += ",";
+      statement += ',';
     }
   });
   statement += ` FROM ${primaryTarget.source.schema}.${primaryTarget.source.name}`;
-  statement += ` WHERE`;
+  statement += ' WHERE';
   let counter = 1;
   const bindings: any[] = [];
   wheres.forEach((whereCond, i) => {
@@ -61,7 +61,7 @@ function CompileQuery(params: {
         def.schemas[whereCond.source.schema].views[whereCond.source.tableOrView]
       ).columns[whereCond.source.column].type;
     if (i > 0) {
-      statement += " AND";
+      statement += ' AND';
     }
     statement += ` ${whereCond.source.schema}.${whereCond.source.tableOrView}.${whereCond.source.column} = $${counter}::${type}`;
 
@@ -103,11 +103,11 @@ class QBTableOrViewFrom<
             source: {
               schema: this.schema as string,
               column: columnName as string,
-              type: "tableOrView",
+              type: 'tableOrView',
               tableOrView: target as string,
             },
             target: {
-              type: "literal",
+              type: 'literal',
               value: columnParams[columnName],
             },
           });
@@ -120,9 +120,9 @@ class QBTableOrViewFrom<
       Schema,
       FromTargetNames,
       Selections
-      >(
-        this.pool, this.def, this.schema, this.fromTargets, currentConditions, []
-      );
+    >(
+      this.pool, this.def, this.schema, this.fromTargets, currentConditions, []
+    );
   }
   public selectColumns = <Params extends Infer.OneOrMore<{
     [Target in FromTargetNames]: Infer.SelectColumns<Schema, Target>
@@ -138,7 +138,7 @@ class QBTableOrViewFrom<
               tableOrView: target as string,
               schema: this.schema as string,
               column: columnName as string,
-              type: "tableOrView",
+              type: 'tableOrView',
             },
           });
         }
@@ -156,21 +156,21 @@ class QBTableOrViewFrom<
         }
         : never
       }
-      >(
-        this.pool,
-        this.def,
-        this.schema,
-        this.fromTargets,
-        this.whereConditions,
-        currentSelectColumns
-      );
+    >(
+      this.pool,
+      this.def,
+      this.schema,
+      this.fromTargets,
+      this.whereConditions,
+      currentSelectColumns
+    );
   }
   public async run() {
     const compilation = CompileQuery({
       def: this.def,
       froms: this.fromTargets.map(t => ({
         source: {
-          type: "fromTableOrView" as "fromTableOrView",
+          type: 'fromTableOrView' as 'fromTableOrView',
           name: t as string,
           schema: this.schema,
         },

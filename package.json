@@ -16,7 +16,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "pg": "^7.8.0"
+    "pg": "^7.8.0",
+    "sql-formatter": "^2.3.2"
   },
   "jest": {
     "verbose": true,

@@ -1,18 +1,18 @@
 import * as pg from 'pg';
 import * as I from '../inference/definition-inference';
-import { MorbidTableClient } from './table-client';
+import { MorbidTableClientRoot } from './table-client-root';
 
-export class MorbidTableClientBuilder<T, C> {
-  constructor(private definition: T, connection: pg.ConnectionConfig) { }
+export class MorbidTableClientWrapper<T, C> {
+  constructor(private definition: T, private pool: pg.Pool) { }
   build() {
     const tableClient = {} as {
-      [K in I.TableNames<T>]: MorbidTableClient<T, C, K>
+      [K in I.TableNames<T>]: MorbidTableClientRoot<T, C, K>
     };
     const definition = this.definition as unknown as I.AnyDefinition;
     const schemaNames = Object.keys(definition.schemas);
 
     const buildIndividual = (tableOrView: any) => {
-      return new MorbidTableClient(tableOrView);
+      return new MorbidTableClientRoot(this.pool, tableOrView);
     };
     schemaNames.forEach(current => {
       const tables = definition.schemas[current].tables;

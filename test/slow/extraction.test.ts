@@ -1,6 +1,6 @@
-import * as M from '../src/index';
+import * as M from '../../src/index';
 import * as path from 'path';
-import { config as creds } from './test-config';
+import { config as creds } from '../test-config';
 import { resetTestDatabase } from './test-utils';
 import * as cp from 'child_process';
 describe('morbid', () => {

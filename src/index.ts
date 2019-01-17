@@ -1,6 +1,6 @@
 import * as pg from 'pg';
 import * as extractor from './extraction/schema-extractor';
-import { MorbidTableClientBuilder } from './interface/table-client-builder';
+import { MorbidTableClientWrapper } from './interface/table-client-wrapper';
 
 interface MorbidParams {
   pg: pg.ConnectionConfig;
@@ -26,5 +26,5 @@ export const Generate = async (params: MorbidParams) => {
  */
 export class Morbid<T, C>{
   constructor(private definition: T, private connection: pg.ConnectionConfig) { }
-  tables = new MorbidTableClientBuilder<T, C>(this.definition, this.connection).build();
+  tables = new MorbidTableClientWrapper<T, C>(this.definition, this.connection).build();
 }

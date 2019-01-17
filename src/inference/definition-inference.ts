@@ -318,7 +318,7 @@ export type SchemalessWhereLiteral<T, C, TargetName extends string> =
   }>
   : never;
 
-export type TableReturnShape<T, C, TargetName extends string> =
+export type TableShape<T, C, TargetName extends string> =
   InferTableOrViewWithoutSchema<T, TargetName> extends {
     columns: infer Columns,
   }

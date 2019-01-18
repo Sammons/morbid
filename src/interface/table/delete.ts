@@ -5,7 +5,7 @@ import { ConstructDeleteFromTable } from '../../sql-construction/table/delete';
 export class MorbidTableDeleteClient<T, C, TableName extends string = any, Result = void> {
   constructor(
     private pool: pg.Pool,
-    private table: I.AnyTableOrView,
+    private table: I.AnyTableOrView & { schema: string },
     private where?: {},
     private returningValue?: string[]
   ) { }
@@ -26,6 +26,7 @@ export class MorbidTableDeleteClient<T, C, TableName extends string = any, Resul
     const construction = ConstructDeleteFromTable({
       returning: this.returningValue,
       table: this.table.name,
+      schema: this.table.schema,
       where: this.where,
     });
     return {

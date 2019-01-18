@@ -2,6 +2,7 @@
 interface ConstructSelectFromTable {
   selections: any[];
   table: string;
+  schema: string;
   where?: {
     [key: string]: (number | string | null)[] | (number | string | null),
   };
@@ -19,7 +20,7 @@ export const ConstructSelectFromTable = (params: ConstructSelectFromTable) => {
   } else {
     sql += ' *';
   }
-  sql += ` from "${params.table}"`;
+  sql += ` from "${params.schema}"."${params.table}"`;
   const where = params.where;
   if (where != null && Object.keys(where).length > 0) {
     sql += ' where';

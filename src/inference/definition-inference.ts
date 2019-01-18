@@ -330,6 +330,22 @@ export type TableShape<T, C, TargetName extends string> =
   }
   : never;
 
+export type TableInsertShape<T, C, TargetName extends string> =
+  InferTableOrViewWithoutSchema<T, TargetName> extends {
+    columns: infer Columns,
+  }
+  ? {
+    [ColumnName in StringKeys<Columns>]:
+    GetMappedJSType<C, TargetName, Columns[ColumnName]> extends infer JSType
+    ? Columns[ColumnName] extends { primary: infer P }
+    ? P extends 'T'
+    ? JSType | undefined
+    : Exclude<JSType, undefined | void>
+    : Exclude<JSType, undefined | void>
+    : never
+  }
+  : never;
+
 export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
   columns: infer Columns,
 }

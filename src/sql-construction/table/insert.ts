@@ -1,6 +1,7 @@
 interface ConstructInsertIntoTable {
   returning?: string[];
   table: string;
+  schema: string;
   values?: {}[];
 }
 
@@ -8,7 +9,7 @@ interface ConstructInsertIntoTable {
 const MaxPGBindings = 34464;
 
 export const ConstructInsertIntoTable = (params: ConstructInsertIntoTable) => {
-  let sql = `insert into "${params.table}"`;
+  let sql = `insert into "${params.schema}"."${params.table}"`;
   let bindings: (string | number)[] = [];
   const bind = (el: any) => {
     bindings.push(el);

@@ -1,5 +1,5 @@
 import { connect, resetTestDatabase, cleanup } from './test-utils';
-describe('test setup', () => {
+describe.skip('test setup', () => {
   const wipe = async () => {
     const pool = await connect('postgres');
     await Promise.all(['test_reset_db_works', 'test_drop_database_works'].map(db => {

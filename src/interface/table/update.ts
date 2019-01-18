@@ -5,7 +5,7 @@ import { ConstructUpdateTable } from '../../sql-construction/table/update';
 export class MorbidTableUpdateClient<T, C, TableName extends string = any, Result = void> {
   constructor(
     private pool: pg.Pool,
-    private table: I.AnyTableOrView,
+    private table: I.AnyTableOrView & { schema: string },
     private where?: { [key: string]: (number | string | null)[] | (number | string | null) },
     private value?: {},
     private returningValue?: string[]
@@ -38,6 +38,7 @@ export class MorbidTableUpdateClient<T, C, TableName extends string = any, Resul
       set: this.value,
       returning: this.returningValue,
       table: this.table.name,
+      schema: this.table.schema,
       where: this.where,
     });
     return {

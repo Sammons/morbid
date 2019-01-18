@@ -6,7 +6,7 @@ import { MorbidTableDeleteClient } from './table/delete';
 import { MorbidTableInsertClient } from './table/insert';
 
 export class MorbidTableClientRoot<T, C, TableName extends string = any, Result = void> {
-  constructor(private pool: pg.Pool, private table: I.AnyTableOrView) { }
+  constructor(private pool: pg.Pool, private table: I.AnyTableOrView & { schema: string }) { }
   update(where: I.SchemalessWhereLiteral<T, C, TableName>) {
     return new MorbidTableUpdateClient(this.pool, this.table, where) as any as MorbidTableUpdateClient<
       T,
@@ -23,7 +23,7 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
       never
     >;
   }
-  insert<V extends I.TableShape<T, C, TableName>>(value: V | V[]) {
+  insert<V extends I.TableInsertShape<T, C, TableName>>(value: V | V[]) {
     return new MorbidTableInsertClient(this.pool, this.table, Array.isArray(value) ? value : [value]) as any as MorbidTableInsertClient<
       T,
       C,

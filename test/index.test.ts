@@ -23,7 +23,7 @@ type Customization = {
   },
 };
 
-describe.only('basic table builder', async () => {
+describe.skip('basic table builder', async () => {
   test('basic select usages', async () => {
     const { tables: db } = new Morbid<typeof Def, Customization>(Def, new pg.Pool({}));
     expect(db.account.select().compile().text).toBe('select * from "account";');

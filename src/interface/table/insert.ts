@@ -5,7 +5,7 @@ import { ConstructInsertIntoTable } from '../../sql-construction/table/insert';
 export class MorbidTableInsertClient<T, C, TableName extends string = any, Result = void> {
   constructor(
     private pool: pg.Pool,
-    private table: I.AnyTableOrView,
+    private table: I.AnyTableOrView & { schema: string },
     private value?: {}[],
     private returningValue?: string[]
   ) { }
@@ -26,6 +26,7 @@ export class MorbidTableInsertClient<T, C, TableName extends string = any, Resul
     const construction = ConstructInsertIntoTable({
       returning: this.returningValue,
       table: this.table.name,
+      schema: this.table.schema,
       values: this.value,
     });
     return {

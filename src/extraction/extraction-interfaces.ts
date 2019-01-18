@@ -10,6 +10,8 @@ export interface ExtractedColumn {
   columnname: string;
   position: number;
   nullable: boolean;
+  primary_key: boolean;
+  column_default: string;
   type: string;
 }
 

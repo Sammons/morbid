@@ -29,6 +29,8 @@ export const Def = {`,
       `              name: ${t(name)},`,
       `              type: ${t(type)},`,
       `              nullable: ${t(extract.nullable ? 'T' : 'F')},`,
+      `              primary: ${t(extract.primary_key ? 'T' : 'F')},`,
+      `              defaultable: ${t(extract.column_default ? 'T' : 'F')},`,
       '            },',
     ].join('\n');
   }

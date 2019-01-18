@@ -48,7 +48,15 @@ export class Queries {
             column_name as columnname,
             ordinal_position as position,
             is_nullable <> 'NO' as nullable,
-            data_type as type
+            data_type as type,
+            (case when exists (
+              select 
+                con.oid
+              from pg_catalog.pg_class cl
+              inner join pg_catalog.pg_constraint con on con.conrelid = cl.oid
+              where con.contype = 'p' and cl.relname = table_name and ordinal_position = any(con.conkey)
+            ) then 'Y' else 'N' end) as primary_key,
+            column_default
           from information_schema."columns" where table_schema = t.schemaname and table_name = t.tablename
         ) x
       ) as columns,

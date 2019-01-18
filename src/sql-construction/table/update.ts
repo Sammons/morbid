@@ -5,13 +5,14 @@ interface ConstructSelectFromTable {
     [key: string]: any,
   };
   table: string;
+  schema: string;
   where?: {
     [key: string]: (number | string | null)[] | (number | string | null),
   };
 }
 
 export const ConstructUpdateTable = (params: ConstructSelectFromTable) => {
-  let sql = `update "${params.table}"`;
+  let sql = `update "${params.schema}"."${params.table}"`;
   let bindings: (string | number)[] = [];
   const bind = (el: any) => {
     bindings.push(el);

@@ -1,13 +1,14 @@
 interface ConstructDeleteFromTable {
   returning?: string[];
   table: string;
+  schema: string;
   where?: {
     [key: string]: (number | string | null)[] | (number | string | null),
   };
 }
 
 export const ConstructDeleteFromTable = (params: ConstructDeleteFromTable) => {
-  let sql = `delete from "${params.table}"`;
+  let sql = `delete from "${params.schema}"."${params.table}"`;
   let bindings: (string | number)[] = [];
   const bind = (el: any) => {
     bindings.push(el);

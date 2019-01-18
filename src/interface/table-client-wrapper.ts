@@ -17,11 +17,15 @@ export class MorbidTableClientWrapper<T, C> {
     schemaNames.forEach(current => {
       const tables = definition.schemas[current].tables;
       Object.keys(tables).forEach(tableName => {
-        tableClient[tableName as I.TableNames<T>] = buildIndividual(tables[tableName]);
+        tableClient[tableName as I.TableNames<T>] = buildIndividual(Object.assign(
+          {}, tables[tableName], { schema: current }
+        ));
       });
       const views = definition.schemas[current].views;
       Object.keys(views).forEach(viewName => {
-        tableClient[viewName as I.TableNames<T>] = buildIndividual(views[viewName]);
+        tableClient[viewName as I.TableNames<T>] = buildIndividual(Object.assign(
+          {}, views[viewName], { schema: current }
+        ));
       });
     });
     return tableClient;

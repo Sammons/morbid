@@ -5,7 +5,7 @@ import { ConstructSelectFromTable } from '../../sql-construction/table/select';
 export class MorbidTableReadClient<T, C, TableName extends string = any, Result = void> {
   constructor(
     private pool: pg.Pool,
-    private table: I.AnyTableOrView,
+    private table: I.AnyTableOrView & { schema: string },
     private selections: string[],
     private whereValue?: { [key: string]: (number | string | null)[] | (number | string | null) }
   ) { }
@@ -21,6 +21,7 @@ export class MorbidTableReadClient<T, C, TableName extends string = any, Result 
     const construction = ConstructSelectFromTable({
       selections: this.selections,
       table: this.table.name,
+      schema: this.table.schema,
       where: this.whereValue,
     });
     return {

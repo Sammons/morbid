@@ -29,11 +29,13 @@ export const resetTestDatabase = async (testDbName: string) => {
 
 export const cleanup = async () => {
   try {
-    await poolCache['postgres'].query(
-      // terminates any connections pg still thinks are doing things
-      // be sure not to terminate our own pool!
-      'select pg_terminate_backend(pid) from pg_stat_activity where state = \'idle\' and application_name = \'\' '
-    );
+    if (poolCache['postgres']) {
+      await poolCache['postgres'].query(
+        // terminates any connections pg still thinks are doing things
+        // be sure not to terminate our own pool!
+        'select pg_terminate_backend(pid) from pg_stat_activity where state = \'idle\' and application_name = \'\' '
+      );
+    }
   } catch (e) {
     console.log('failed to terminate idle connections', e);
   }

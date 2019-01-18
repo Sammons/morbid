@@ -1,10 +1,11 @@
-import * as I from '../inference/definition-inference';
+import * as I from '../../inference/definition-inference';
 import * as pg from 'pg';
-import { ConstructSelectFromTable } from '../sql-construction/construct-select-from-table';
+import { ConstructSelectFromTable } from '../../sql-construction/table/select';
+
 export class MorbidTableReadClient<T, C, TableName extends string = any, Result = void> {
   constructor(
     private pool: pg.Pool,
-    private table: TableName,
+    private table: I.AnyTableOrView,
     private selections: string[],
     private whereValue?: { [key: string]: (number | string | null)[] | (number | string | null) }
   ) { }
@@ -19,7 +20,7 @@ export class MorbidTableReadClient<T, C, TableName extends string = any, Result 
   compile() {
     const construction = ConstructSelectFromTable({
       selections: this.selections,
-      table: this.table,
+      table: this.table.name,
       where: this.whereValue,
     });
     return {
@@ -27,7 +28,7 @@ export class MorbidTableReadClient<T, C, TableName extends string = any, Result 
       values: construction.bindings,
     };
   }
-  async run() {
+  async run(): Promise<Result[]> {
     const result = await this.pool.query(this.compile());
     return result.rows;
   }

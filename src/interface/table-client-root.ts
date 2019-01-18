@@ -1,21 +1,54 @@
-import * as I from '../inference/definition-inference';
-import { MorbidTableUpdateClient } from './table-update-client';
-import { MorbidTableReadClient } from './table-read-client';
 import * as pg from 'pg';
+import * as I from '../inference/definition-inference';
+import { MorbidTableUpdateClient } from './table/update';
+import { MorbidTableReadClient } from './table/read';
+import { MorbidTableDeleteClient } from './table/delete';
+import { MorbidTableInsertClient } from './table/insert';
 
 export class MorbidTableClientRoot<T, C, TableName extends string = any, Result = void> {
   constructor(private pool: pg.Pool, private table: I.AnyTableOrView) { }
-  update(value: I.SchemalessUpdateLiteral<T, C, TableName>) {
-    return this as any as MorbidTableUpdateClient<T, C, TableName, Result>;
+  update(where: I.SchemalessWhereLiteral<T, C, TableName>) {
+    return new MorbidTableUpdateClient(this.pool, this.table, where) as any as MorbidTableUpdateClient<
+      T,
+      C,
+      TableName,
+      never
+    >;
+  }
+  updateAll() {
+    return new MorbidTableUpdateClient(this.pool, this.table) as any as MorbidTableUpdateClient<
+      T,
+      C,
+      TableName,
+      never
+    >;
   }
   insert<V extends I.TableShape<T, C, TableName>>(value: V | V[]) {
-
+    return new MorbidTableInsertClient(this.pool, this.table, Array.isArray(value) ? value : [value]) as any as MorbidTableInsertClient<
+      T,
+      C,
+      TableName,
+      never
+    >;
   }
-  delete(value: I.SchemalessWhereLiteral<T, C, TableName>) {
-
+  delete(where: I.SchemalessWhereLiteral<T, C, TableName>) {
+    return new MorbidTableDeleteClient(this.pool, this.table, where) as any as MorbidTableDeleteClient<
+      T,
+      C,
+      TableName,
+      never
+    >;
+  }
+  deleteAll() {
+    return new MorbidTableDeleteClient(this.pool, this.table) as any as MorbidTableDeleteClient<
+      T,
+      C,
+      TableName,
+      never
+    >;
   }
   select<S extends I.InferTableOrViewColumnNamesWithoutSchema<T, TableName>>(...s: S[]) {
-    return new MorbidTableReadClient(this.pool, this.table.name, s) as any as MorbidTableReadClient<
+    return new MorbidTableReadClient(this.pool, this.table, s) as any as MorbidTableReadClient<
       T,
       C,
       TableName,

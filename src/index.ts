@@ -3,7 +3,7 @@ import * as extractor from './extraction/schema-extractor';
 import { MorbidTableClientWrapper } from './interface/table-client-wrapper';
 
 interface MorbidParams {
-  pg: pg.ConnectionConfig;
+  pg: pg.Pool;
   destination: string; // output definition typescript file
   schemas: string[]; // must be provided, the schemas to extract
 }
@@ -16,7 +16,7 @@ interface MorbidParams {
  * to produce a super handy (morbidly so) database client.
  */
 export const Generate = async (params: MorbidParams) => {
-  await new extractor.SchemaExtractor(new pg.Pool(params.pg)).extract(params.destination, params.schemas);
+  await new extractor.SchemaExtractor(params.pg).extract(params.destination, params.schemas);
 };
 
 /**
@@ -25,6 +25,6 @@ export const Generate = async (params: MorbidParams) => {
  * with intellisense and full type information (via typescript generics)
  */
 export class Morbid<T, C>{
-  constructor(private definition: T, private connection: pg.ConnectionConfig) { }
-  tables = new MorbidTableClientWrapper<T, C>(this.definition, this.connection).build();
+  constructor(private definition: T, private pool: pg.Pool) { }
+  tables = new MorbidTableClientWrapper<T, C>(this.definition, this.pool).build();
 }

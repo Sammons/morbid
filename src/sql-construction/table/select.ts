@@ -21,7 +21,7 @@ export const ConstructSelectFromTable = (params: ConstructSelectFromTable) => {
   }
   sql += ` from "${params.table}"`;
   const where = params.where;
-  if (where != null) {
+  if (where != null && Object.keys(where).length > 0) {
     sql += ' where';
     const keys = Object.keys(where);
     let hasFirstWhere = false;

@@ -6,7 +6,7 @@
   "scripts": {
     "start-pg": "docker-compose up -d",
     "restart-pg": "docker stop postgres && docker start postgres",
-    "jest": "jest --detectOpenHandles",
+    "jest": "jest",
     "build": "tsc -p .",
     "clean": "rm -rf built",
     "test": "npm-run-all build start-pg jest",

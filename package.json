@@ -10,6 +10,7 @@
     "build": "tsc -p .",
     "clean": "rm -rf built",
     "test": "npm-run-all build start-pg jest",
+    "travis": "npm-run-all build jest",
     "tslint-with-types": "tslint --project .",
     "setup-test-db": "tsc -p . && node -e 'require(`./built/test/test-utils.js`).resetTestDatabase(`test`)'"
   },

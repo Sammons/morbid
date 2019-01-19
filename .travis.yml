@@ -8,4 +8,4 @@ before_script:
   - psql -c "alter user postgres with password 'postgres';" -U postgres
 
 script:
-  - npm run test
+  - npm run travis

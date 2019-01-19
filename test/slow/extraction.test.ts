@@ -5,7 +5,7 @@ import { resetTestDatabase } from './test-utils';
 import * as cp from 'child_process';
 import * as pg from 'pg';
 
-describe.only('morbid', () => {
+describe('morbid', () => {
   const name = 'morbid-test-output-definition';
   const testOutputFile = path.resolve(__dirname, name);
   test('extracting the test database schemas', async () => {

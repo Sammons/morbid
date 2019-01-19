@@ -1,6 +1,6 @@
 import { Morbid } from '../src/index';
 import { Def } from './samples/sample-morbid-test-output-definition';
-import { connect, resetTestDatabase, cleanup } from './slow/test-utils';
+import { connect, cleanup, resetTestDatabase } from './slow/test-utils';
 
 // example override for account.data shape
 interface AccountState {
@@ -23,23 +23,32 @@ type Customization = {
   },
 };
 
-describe.skip('table wrapper', () => {
+describe('table wrapper', () => {
   beforeAll(async () => {
     await resetTestDatabase('table_test');
   });
   afterAll(async () => {
     await cleanup();
   });
-  test('basic select usages', async () => {
+  test('basic table usages', async () => {
     const pool = await connect('table_test');
     const { tables: db } = new Morbid<typeof Def, Customization>(Def, pool);
-    await db.account.insert({
+    const [{ id }] = await db.account.insert({
       data: {
         kind: 1,
       },
       label: 'test',
-    }).run();
-    const rows = await db.account.deleteAll().returning('id').run();
+    }).returning('id').run();
+    await db.account.update({
+      id: id,
+    }).set({
+      data: { kind: 1 },
+    });
+    const rows = await db.account.delete({
+      id: id,
+    }).returning('id').run();
     expect(rows.length).toBe(1);
+    const res = await db.account.deleteAll().returning('id').run();
+    expect(res.length).toBe(0);
   });
 });

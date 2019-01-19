@@ -30,11 +30,13 @@ describe.skip('table wrapper', () => {
   afterAll(async () => {
     await cleanup();
   });
-  test.only('basic select usages', async () => {
+  test('basic select usages', async () => {
     const pool = await connect('table_test');
     const { tables: db } = new Morbid<typeof Def, Customization>(Def, pool);
     await db.account.insert({
-      data: { kind: 1 },
+      data: {
+        kind: 1,
+      },
       label: 'test',
     }).run();
     const rows = await db.account.deleteAll().returning('id').run();

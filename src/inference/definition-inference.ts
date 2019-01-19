@@ -330,20 +330,34 @@ export type TableShape<T, C, TargetName extends string> =
   }
   : never;
 
+export type RemoveNeverKeys<T> = Pick<T, Exclude<StringKeys<T>, {
+  [K in StringKeys<T>]: T[K] extends never ? K : never;
+}[StringKeys<T>]>>;
+
+
 export type TableInsertShape<T, C, TargetName extends string> =
   InferTableOrViewWithoutSchema<T, TargetName> extends {
     columns: infer Columns,
   }
-  ? {
+  ? RemoveNeverKeys<{
     [ColumnName in StringKeys<Columns>]:
     GetMappedJSType<C, TargetName, Columns[ColumnName]> extends infer JSType
-    ? Columns[ColumnName] extends { primary: infer P }
-    ? P extends 'T'
-    ? JSType | undefined
-    : Exclude<JSType, undefined | void>
-    : Exclude<JSType, undefined | void>
+    ? Columns[ColumnName] extends { defaultable: infer D }
+    ? D extends 'T'
+    ? never
+    : JSType
+    : JSType
     : never
-  }
+  }> & Partial<{
+    [ColumnName in StringKeys<Columns>]:
+    GetMappedJSType<C, TargetName, Columns[ColumnName]> extends infer JSType
+    ? Columns[ColumnName] extends { defaultable: infer D }
+    ? D extends 'T'
+    ? JSType
+    : JSType
+    : JSType
+    : never
+  }>
   : never;
 
 export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {

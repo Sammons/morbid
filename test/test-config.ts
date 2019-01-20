@@ -6,7 +6,7 @@ export const config: pg.PoolConfig = {
   host: 'localhost',
   database: 'postgres',
   password: 'postgres',
-  port: 5432,
+  port: 5433,
   user: 'postgres',
   min: 1,
   max: 1,

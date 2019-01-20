@@ -1,11 +1,23 @@
 language: node_js
 node_js:
   - "10"
-services:
-  - postgresql
+
+addons:
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
+
+before_install:
+  - export PGPORT=5433
+  - sudo sed -i.bak s/peer/trust/g /etc/postgresql/10/main/pg_hba.conf
+  - sudo sed -i.bak s/md5/trust/g /etc/postgresql/10/main/pg_hba.conf
+  - sudo /etc/init.d/postgresql restart
 
 before_script:
-  - psql -c "alter user postgres with password 'postgres';" -U postgres
+  - psql -p 5433 -c "alter user postgres with password 'postgres';" -U postgres
 
 script:
   - npm run travis
+

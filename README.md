@@ -1,3 +1,5 @@
+![build-status](https://travis-ci.org/Sammons/morbid.svg?branch=master)
+
 This project is a work in progress. At this point in time it is not a viable solution. Feel free to pitch in, just open a PR!
 
 Take a look at the test/samples directory for how to use Morbid.

@@ -29,9 +29,11 @@ export const connect = async (database: string = 'test') => {
 export const resetTestDatabase = async (testDbName: string) => {
   const masterClient = await connect('postgres');
   const res = await masterClient.query('select * from pg_catalog.pg_database where datname=$1', [testDbName]);
-  if (res.rowCount === 0) {
-    await masterClient.query('drop database if exists $1;', [testDbName]);
-    await masterClient.query('create database $1;', [testDbName]);
+  if (res.rowCount < 1) {
+    const escape = pg.Client.prototype.escapeIdentifier;
+    const name = escape(testDbName);
+    await masterClient.query(`drop database if exists ${name};`, []);
+    await masterClient.query(`create database ${name};`, []);
     const testClient = await connect(testDbName);
     await testClient.query(setup.initialize());
   }

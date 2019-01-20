@@ -16,7 +16,6 @@ export const Run = async <T>(pool: Pool, query: MorbidQuery): Promise<T[]> => {
       const fail = (e: Error) => {
         // TODO: move this out into a util of some sort
         e.stack = (e.stack || '') + '\n' + (error.stack || '').split('\n').slice(1).join('\n');
-        console.log(e.stack.split('\n').slice(1));
         return e;
       };
       pgQuery.on('row', (row: any) => {
@@ -26,7 +25,6 @@ export const Run = async <T>(pool: Pool, query: MorbidQuery): Promise<T[]> => {
         resolve(rows);
       });
       pgQuery.on('error', (e: Error) => {
-        console.log('error');
         reject(fail(e));
       });
       client.query(pgQuery);

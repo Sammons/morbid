@@ -1,6 +1,7 @@
 import * as pg from 'pg';
 import * as I from '../../inference/definition-inference';
 import { ConstructDeleteFromTable } from '../../sql-construction/table/delete';
+import { Run } from '../run';
 
 export class MorbidTableDeleteClient<T, C, TableName extends string = any, Result = void> {
   constructor(
@@ -34,8 +35,5 @@ export class MorbidTableDeleteClient<T, C, TableName extends string = any, Resul
       values: construction.bindings,
     };
   }
-  async run(): Promise<Result[]> {
-    const result = await this.pool.query(this.compile());
-    return result.rows;
-  }
+  run = () => Run<Result>(this.pool, this.compile());
 }

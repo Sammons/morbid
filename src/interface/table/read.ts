@@ -1,6 +1,7 @@
 import * as I from '../../inference/definition-inference';
 import * as pg from 'pg';
 import { ConstructSelectFromTable } from '../../sql-construction/table/select';
+import { Run } from '../run';
 
 export class MorbidTableReadClient<T, C, TableName extends string = any, Result = void> {
   constructor(
@@ -29,8 +30,5 @@ export class MorbidTableReadClient<T, C, TableName extends string = any, Result 
       values: construction.bindings,
     };
   }
-  async run(): Promise<Result[]> {
-    const result = await this.pool.query(this.compile());
-    return result.rows;
-  }
+  run = () => Run<Result>(this.pool, this.compile());
 }

@@ -51,4 +51,22 @@ describe('table wrapper', () => {
     const res = await db.account.deleteAll().returning('id').run();
     expect(res.length).toBe(0);
   });
+  test('select with a bad id, has useful stack', async () => {
+    const pool = await connect('table_test');
+    const { tables: db } = new Morbid<typeof Def, Customization>(Def, pool);
+    try {
+      const t = () => {
+        return db.account.select().where({
+          id: '123',
+        }).run();
+      };
+      await t();
+    } catch (e) {
+      expect(e.message).toBe('invalid input syntax for type uuid: \"123\"');
+      const lines = e.stack.split('\n');
+      lines.pop();// throw out the .nextTick always at the end
+      const shouldBeTFunc = lines.pop(); // the lambda declared in this function
+      expect(shouldBeTFunc.trim()).toMatch(/.t\s/);
+    }
+  });
 });

@@ -61,6 +61,7 @@ describe.only('transactions', () => {
     await trx.abort();
     await trx.commit();
   });
+
   test('basic abort', async () => {
     const pool = await connect('transaction_test');
     const morbid = new Morbid<typeof Def, Customization>(Def, pool);

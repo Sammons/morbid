@@ -13,65 +13,66 @@ Take a look at the test/samples directory for how to use Morbid.
 
 A schema-aware typescript querybuilder for postgres. Other morbid flavors may come to exist, but will be in different repositories.
 
-## Goals
+## Latest Features / Quickstart:
 
-To provide strong safety in code that interacts with the database, and to do so in a natural way for people who have SQL expertise.
+### Direct table access
 
-We will:
+If we are accessing the "accounting" table with columns 'id', 'data', 'label', then we do the following:
 
-* Strive to be simple, but not at the cost of breadth.
-  + Even if something is not documented, it should work the way you would think it does
-  + We won't give up on fun things like window functions in SQL just to make the api more minimal
-  + We will still try to keep the api more minimal :)
-* Encourage declarative, but clear programming.
-* Provide the strongest types possible.
-  + If it compiles, it should work as intended.
-* Provide semantic versioning where possible, erring towards caution.
-  + Known breakages of any size will be a major change.
-  + New methods will be minor changes.
-  + Everything else will be a patch change, including changes to documentation.
-  + Version changes correspond to published NPM packages.
+```typescript
+type Customization = {
+  // globally override a type
+  __override__: {
+    uuid: string;
+  },
+  // optionally comandeer the type for a specific
+  // column, handy for json columns
+  tables: {
+    account: {
+      data: { email: string },
+    },
+  },
+};
 
-## Features:
+const morbid = new Morbid<typeof Def, Customization>(Def, pool);
 
-### V0.1.0 - goals
+morbid.tables.accounting.select().run();
+morbid.tables.accounting.select().where({ id: 1 }).run();
+morbid.tables.accounting.select('id', 'data', 'label').where({ id: 1 }).run();
+morbid.tables.accounting.insert(...values...).run();
+morbid.tables.accounting.insert(...values...).returning('id', 'data', ... ).run();
+morbid.tables.accounting.delete({ id: [1, 2, 3] }).returning('id').run();
+morbid.tables.accounting.deleteAll().returning('id').run();
+morbid.tables.accounting.update({ id: [1, 2, 3] }).set({ label: 'some label'}).returning('id').run();
+morbid.tables.accounting.updateAll().set({ label: 'some label'}).returning('id').run();
+```
 
-* Extracts the schema of your postgres database into a typescript "definition" file
-* Uses the "definition" to provide clean intellisense & typesafety
-  - inner join 
-    + support strict type comparisons
-  - where clause construction
-    + support strict type comparisons
-  - basic subquery support
-  - default isolation level transactions
-* Provides basic migration support
-  - add support for valid type coercion to inner joins and where clauses
-### V0.2.0 - goals
+### Transactions 
 
-* Provide way to access/use table foreign key relationships
-* 
+The `.run` calls above accept an optional transaction object:
 
-## Potential Features
+```typescript
 
-Things that are large efforts and slated for.... one day. If you want to know how to approach these, please ask.
+const trx1 = await morbid.startTransaction(); // actually issues the BEGIN statement
+const trx2 = await morbid.startTransaction({ isolation: 'serializable' }); // optionally set the isolation level
 
-* Have a way to flag queries that are not cross-database compatible.
-* Dynamic column constraint verification / coercion - e.g. provide an option to substring strings that exceed a column width.
-* Query profiling? We should be able to output explain metrics and usage reports to a file.
-* Query optimization? We should be able to use profiling output to internally optimize queries.
-* Dashboard of queries executed, counts, data return sizes, usage location, performance? We should be able to aggregate data and provide a dashboard for developers that helps identify problem queries and in general give insights that are otherwise impossible to get.
+await morbid.tables.accounting.select().run(trx1);
 
-## Quick Start
+await trx1.commit(); // commit, finalize changes. Does nothing if already aborted/committed
+await trx1.abort(); // cancel, rollback changes. Does nothing if already aborted/committed
 
-TBD
+morbid.tables.accounting.select().run(trx1); // throws an error now that the transaction is completed
+```
 
-## Why not use an ORM?
+Note that this means transactions must be aborted/committed if they did not fail. Later options may be introduced to provide monitoring / auto-aborting after a period of time. A trx.scope(() => {/* when this finishes complete */}) feature may be added later but is not considered the best pattern.
 
-Sooner or later most applications need to execute queries more complex than simple CRUD (Create Read Update Delete) operations. This causes developers to break away from the standard ORM usage to write raw queries or use a querybuilder. Most things can be handled by the ORM, but not everything. A querybuilder seeks to provide a single way to access the data layer for 100% of interactions.
+Note also it should be considered safe for a web application to automatically .commit at the end of every request, because calling .commit on an aborted or committed transaction is a no-op.
+
+## What's coming next:
 
 ## Attributions
 
-Knex.js is a powerful cross-database tool, but they often break people in patch changes and have limited typescript support, especially since many database-specific queries have to break out into raw expressions which have zero typechecking. At this point that project does a good job for javascript projects, but Morbid strives to take querybuilding to the next level.
+Knex.js serves as a great example of both success and gaps. It deserves kudos for power, but Morbid strives to be even more intuitive and much more typesafe.
 
 ## Questions, Issues
 
@@ -83,7 +84,17 @@ Just open a github issue.
 
 ## Why is this morbid?
 
-- Its recursively funny, don't worry about it too much.
+- All the living names were taken, and database humor *is* morbid.
+
+## Potential Features (Dream big right?)
+
+Things that are large efforts and slated for.... one day. If you want to know how to approach these, please ask.
+
+* Have a way to flag queries that are not cross-database compatible.
+* Dynamic column constraint verification / coercion - e.g. provide an option to substring strings that exceed a column width.
+* Query profiling? We should be able to output explain metrics and usage reports to a file.
+* Query optimization? We should be able to use profiling output to internally optimize queries.
+* Dashboard of queries executed, counts, data return sizes, usage location, performance? We should be able to aggregate data and provide a dashboard for developers that helps identify problem queries and in general give insights that are otherwise impossible to get.
 
 ## License
 

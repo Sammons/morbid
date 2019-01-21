@@ -1,6 +1,8 @@
 import * as pg from 'pg';
 import * as extractor from './extraction/schema-extractor';
 import { MorbidTableClientWrapper } from './interface/table-client-wrapper';
+import { MorbidPGClientTracker } from './interface/client-tracker';
+import { TransactionOptions, MorbidTransaction } from './interface/transaction';
 
 interface MorbidParams {
   pg: pg.Pool;
@@ -25,6 +27,19 @@ export const Generate = async (params: MorbidParams) => {
  * with intellisense and full type information (via typescript generics)
  */
 export class Morbid<T, C>{
+
   constructor(private definition: T, private pool: pg.Pool) { }
-  tables = new MorbidTableClientWrapper<T, C>(this.definition, this.pool).build();
+  private clientTracker = new MorbidPGClientTracker(this.pool);
+  tables = new MorbidTableClientWrapper<T, C>(this.definition, this.clientTracker).build();
+  async startTransaction(opts?: TransactionOptions) {
+    // declare error first for correct stack
+    const failure = new Error('Transaction was not initialized!');
+    const transaction = new MorbidTransaction(opts || {
+      isolation: 'committed',
+    }, this.clientTracker);
+    if (await transaction.initialize()) {
+      return transaction;
+    }
+    throw failure;
+  }
 }

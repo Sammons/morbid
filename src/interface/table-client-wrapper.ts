@@ -1,9 +1,9 @@
-import * as pg from 'pg';
 import * as I from '../inference/definition-inference';
 import { MorbidTableClientRoot } from './table-client-root';
+import { MorbidPGClientTracker } from './client-tracker';
 
 export class MorbidTableClientWrapper<T, C> {
-  constructor(private definition: T, private pool: pg.Pool) { }
+  constructor(private definition: T, private clientTracker: MorbidPGClientTracker) { }
   build() {
     const tableClient = {} as {
       [K in I.TableNames<T>]: MorbidTableClientRoot<T, C, K>
@@ -12,7 +12,7 @@ export class MorbidTableClientWrapper<T, C> {
     const schemaNames = Object.keys(definition.schemas);
 
     const buildIndividual = (tableOrView: any) => {
-      return new MorbidTableClientRoot(this.pool, tableOrView);
+      return new MorbidTableClientRoot(this.clientTracker, tableOrView);
     };
     schemaNames.forEach(current => {
       const tables = definition.schemas[current].tables;

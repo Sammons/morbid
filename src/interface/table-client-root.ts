@@ -1,14 +1,19 @@
-import * as pg from 'pg';
 import * as I from '../inference/definition-inference';
 import { MorbidTableUpdateClient } from './table/update';
 import { MorbidTableReadClient } from './table/read';
 import { MorbidTableDeleteClient } from './table/delete';
 import { MorbidTableInsertClient } from './table/insert';
+import { MorbidPGClientTracker } from './client-tracker';
 
 export class MorbidTableClientRoot<T, C, TableName extends string = any, Result = void> {
-  constructor(private pool: pg.Pool, private table: I.AnyTableOrView & { schema: string }) { }
+  constructor(
+    private clientTracker: MorbidPGClientTracker,
+    private table: I.AnyTableOrView & { schema: string }
+  ) { }
   update(where: I.SchemalessWhereLiteral<T, C, TableName>) {
-    return new MorbidTableUpdateClient(this.pool, this.table, where) as any as MorbidTableUpdateClient<
+    return new MorbidTableUpdateClient(
+      this.clientTracker, this.table, where
+    ) as any as MorbidTableUpdateClient<
       T,
       C,
       TableName,
@@ -16,7 +21,9 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
     >;
   }
   updateAll() {
-    return new MorbidTableUpdateClient(this.pool, this.table) as any as MorbidTableUpdateClient<
+    return new MorbidTableUpdateClient(
+      this.clientTracker, this.table
+    ) as any as MorbidTableUpdateClient<
       T,
       C,
       TableName,
@@ -24,7 +31,9 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
     >;
   }
   insert<V extends I.TableInsertShape<T, C, TableName>>(value: V | V[]) {
-    return new MorbidTableInsertClient(this.pool, this.table, Array.isArray(value) ? value : [value]) as any as MorbidTableInsertClient<
+    return new MorbidTableInsertClient(
+      this.clientTracker, this.table, Array.isArray(value) ? value : [value]
+    ) as any as MorbidTableInsertClient<
       T,
       C,
       TableName,
@@ -32,7 +41,9 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
     >;
   }
   delete(where: I.SchemalessWhereLiteral<T, C, TableName>) {
-    return new MorbidTableDeleteClient(this.pool, this.table, where) as any as MorbidTableDeleteClient<
+    return new MorbidTableDeleteClient(
+      this.clientTracker, this.table, where
+    ) as any as MorbidTableDeleteClient<
       T,
       C,
       TableName,
@@ -40,7 +51,9 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
     >;
   }
   deleteAll() {
-    return new MorbidTableDeleteClient(this.pool, this.table) as any as MorbidTableDeleteClient<
+    return new MorbidTableDeleteClient(
+      this.clientTracker, this.table
+    ) as any as MorbidTableDeleteClient<
       T,
       C,
       TableName,
@@ -48,7 +61,9 @@ export class MorbidTableClientRoot<T, C, TableName extends string = any, Result 
     >;
   }
   select<S extends I.InferTableOrViewColumnNamesWithoutSchema<T, TableName>>(...s: S[]) {
-    return new MorbidTableReadClient(this.pool, this.table, s) as any as MorbidTableReadClient<
+    return new MorbidTableReadClient(
+      this.clientTracker, this.table, s
+    ) as any as MorbidTableReadClient<
       T,
       C,
       TableName,

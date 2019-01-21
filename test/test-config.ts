@@ -8,6 +8,7 @@ export const config: pg.PoolConfig = {
   password: 'postgres',
   port: 5433,
   user: 'postgres',
-  min: 1,
-  max: 1,
+  // must have at least 2 or else transaction tests will never work
+  min: 2,
+  max: 2,
 };

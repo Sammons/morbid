@@ -1,11 +1,12 @@
-import * as pg from 'pg';
 import * as I from '../../inference/definition-inference';
 import { ConstructUpdateTable } from '../../sql-construction/table/update';
 import { Run } from '../run';
+import { MorbidPGClientTracker } from '../client-tracker';
+import { MorbidTransaction } from '../transaction';
 
 export class MorbidTableUpdateClient<T, C, TableName extends string = any, Result = void> {
   constructor(
-    private pool: pg.Pool,
+    private clientTracker: MorbidPGClientTracker,
     private table: I.AnyTableOrView & { schema: string },
     private where?: { [key: string]: (number | string | null)[] | (number | string | null) },
     private value?: {},
@@ -13,7 +14,7 @@ export class MorbidTableUpdateClient<T, C, TableName extends string = any, Resul
   ) { }
   set(value: I.OneOrMore<I.TableShape<T, C, TableName>>): MorbidTableUpdateClient<T, C, TableName, Result> {
     return new MorbidTableUpdateClient(
-      this.pool,
+      this.clientTracker,
       this.table,
       this.where,
       value,
@@ -22,7 +23,7 @@ export class MorbidTableUpdateClient<T, C, TableName extends string = any, Resul
   }
   returning<S extends I.InferTableOrViewColumnNamesWithoutSchema<T, TableName>>(...returning: S[]) {
     return new MorbidTableUpdateClient(
-      this.pool,
+      this.clientTracker,
       this.table,
       this.where,
       this.value,
@@ -47,5 +48,9 @@ export class MorbidTableUpdateClient<T, C, TableName extends string = any, Resul
       values: construction.bindings,
     };
   }
-  run = () => Run<Result>(this.pool, this.compile());
+  run = (transaction?: MorbidTransaction) => Run<Result>({
+    clientTracker: this.clientTracker,
+    query: this.compile(),
+    transaction,
+  })
 }

@@ -1,18 +1,19 @@
-import * as pg from 'pg';
 import * as I from '../../inference/definition-inference';
 import { ConstructDeleteFromTable } from '../../sql-construction/table/delete';
 import { Run } from '../run';
+import { MorbidPGClientTracker } from '../client-tracker';
+import { MorbidTransaction } from '../transaction';
 
 export class MorbidTableDeleteClient<T, C, TableName extends string = any, Result = void> {
   constructor(
-    private pool: pg.Pool,
+    private clientTracker: MorbidPGClientTracker,
     private table: I.AnyTableOrView & { schema: string },
     private where?: {},
     private returningValue?: string[]
   ) { }
   returning<S extends I.InferTableOrViewColumnNamesWithoutSchema<T, TableName>>(...returning: S[]) {
     return new MorbidTableDeleteClient(
-      this.pool,
+      this.clientTracker,
       this.table,
       this.where,
       returning
@@ -35,5 +36,9 @@ export class MorbidTableDeleteClient<T, C, TableName extends string = any, Resul
       values: construction.bindings,
     };
   }
-  run = () => Run<Result>(this.pool, this.compile());
+  run = (transaction?: MorbidTransaction) => Run<Result>({
+    clientTracker: this.clientTracker,
+    query: this.compile(),
+    transaction,
+  })
 }

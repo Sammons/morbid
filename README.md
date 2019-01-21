@@ -53,13 +53,13 @@ The `.run` calls above accept an optional transaction object:
 
 ```typescript
 
-const trx1 = await morbid.startTransaction(); // actually issues the BEGIN statement
+const trx = await morbid.startTransaction(); // actually issues the BEGIN statement
 const trx2 = await morbid.startTransaction({ isolation: 'serializable' }); // optionally set the isolation level
 
-await morbid.tables.accounting.select().run(trx1);
+await morbid.tables.accounting.select().run(trx);
 
-await trx1.commit(); // commit, finalize changes. Does nothing if already aborted/committed
-await trx1.abort(); // cancel, rollback changes. Does nothing if already aborted/committed
+await trx.commit(); // commit, finalize changes. Does nothing if already aborted/committed
+await trx.abort(); // cancel, rollback changes. Does nothing if already aborted/committed
 
 morbid.tables.accounting.select().run(trx1); // throws an error now that the transaction is completed
 ```
@@ -69,6 +69,20 @@ Note that this means transactions must be aborted/committed if they did not fail
 Note also it should be considered safe for a web application to automatically .commit at the end of every request, because calling .commit on an aborted or committed transaction is a no-op.
 
 ## What's coming next:
+
+- free form query building
+- chainable relationships for direct table access. E.g. 
+```typescript
+await morbid.tables
+  .accounting.join
+  .invoices
+  .where({
+    accounting: { whereclause }
+    invoices: { whereclause }
+  })
+  .run()
+```
+
 
 ## Attributions
 

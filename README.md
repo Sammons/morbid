@@ -7,7 +7,7 @@
 
 This project is a work in progress. At this point in time it is not a production ready solution. Feel free to pitch in, just open a PR!
 
-Take a look at the test/samples directory for how to use Morbid.
+Take a look at the tests for examples.
 
 # Morbid
 
@@ -15,11 +15,33 @@ A schema-aware typescript querybuilder for postgres. Other morbid flavors may co
 
 ## Latest Features / Quickstart:
 
+### Extraction
+
+```typescript
+import {Generate} from 'morbid'
+import {Pool} from 'pg';
+
+await M.Generate({
+  // will have .ts added when it is generated.
+  destination: 'output-definition',
+  pg: new Pool({
+    ...creds,
+    database: 'test_extract',
+  }),
+  schemas: ['accounting', 'sys', 'tenant', 'media']
+});
+```
+
+Then import that extracted definition for the rest of the features.
+
 ### Direct table access
 
 If we are accessing the "accounting" table with columns 'id', 'data', 'label', then we do the following:
 
 ```typescript
+import {Morbid} from 'morbid'
+import {Def} from './output-definition.ts'
+
 type Customization = {
   // globally override a type
   __override__: {
@@ -34,7 +56,10 @@ type Customization = {
   },
 };
 
-const morbid = new Morbid<typeof Def, Customization>(Def, pool);
+const morbid = new Morbid<typeof Def, Customization>(Def, new Pool({
+    ...creds,
+    database: 'test_extract',
+  }));
 
 morbid.tables.accounting.select().run();
 morbid.tables.accounting.select().where({ id: 1 }).run();

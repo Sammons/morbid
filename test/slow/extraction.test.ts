@@ -1,7 +1,7 @@
 import * as M from '../../src/index';
 import * as path from 'path';
 import { config as creds } from '../test-config';
-import { resetTestDatabase, cleanup } from './test-utils';
+import { resetTestDatabase, cleanup } from '../test-utilities/common';
 import * as cp from 'child_process';
 import * as pg from 'pg';
 

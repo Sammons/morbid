@@ -1,6 +1,6 @@
 import * as I from '../../inference/definition-inference';
 import { ConstructDeleteFromTable } from '../../sql-construction/table/delete';
-import { Run } from '../run';
+import { Run } from '../execution/run';
 import { MorbidPGClientTracker } from '../client-tracker';
 import { MorbidTransaction } from '../transaction';
 

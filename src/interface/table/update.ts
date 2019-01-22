@@ -1,6 +1,6 @@
 import * as I from '../../inference/definition-inference';
 import { ConstructUpdateTable } from '../../sql-construction/table/update';
-import { Run } from '../run';
+import { Run } from '../execution/run';
 import { MorbidPGClientTracker } from '../client-tracker';
 import { MorbidTransaction } from '../transaction';
 

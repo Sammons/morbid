@@ -1,6 +1,8 @@
 import * as pg from 'pg';
 import * as setup from '../setup/drop-and-setup-schema';
 import { config } from '../test-config';
+import { Morbid } from '../../src';
+import { Def } from '../samples/sample-morbid-test-output-definition';
 const poolCache: { [database: string]: pg.Pool } = {};
 
 export const connect = async (database: string = 'test') => {
@@ -59,4 +61,29 @@ export const cleanup = async () => {
       console.log('failed to end a pool normally', e);
     }
   }));
+};
+
+export interface AccountState {
+  kind: number;
+  email?: string;
+}
+export const getTestMorbid = async (database: string) => {
+  // example override for account.data shape
+
+  type Customization = {
+    // globally override a type
+    __override__: {
+      bytea: Buffer,
+      uuid: string;
+    },
+    // optionally comandeer the type for a specific
+    // column, handy for json columns
+    tables: {
+      account: {
+        data: AccountState,
+      },
+    },
+  };
+  const pool = await connect('transaction_test');
+  return new Morbid<typeof Def, Customization>(Def, pool);
 };

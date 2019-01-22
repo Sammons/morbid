@@ -1,8 +1,9 @@
 import * as I from '../../inference/definition-inference';
 import { ConstructSelectFromTable } from '../../sql-construction/table/select';
-import { Run } from '../run';
+import { Run } from '../execution/run';
 import { MorbidPGClientTracker } from '../client-tracker';
 import { MorbidTransaction } from '../transaction';
+import { Pipe } from '../execution/pipe';
 
 export class MorbidTableReadClient<T, C, TableName extends string = any, Result = void> {
   constructor(
@@ -32,6 +33,11 @@ export class MorbidTableReadClient<T, C, TableName extends string = any, Result 
     };
   }
   run = (transaction?: MorbidTransaction) => Run<Result>({
+    clientTracker: this.clientTracker,
+    query: this.compile(),
+    transaction,
+  })
+  stream = (transaction?: MorbidTransaction) => Pipe<Result>({
     clientTracker: this.clientTracker,
     query: this.compile(),
     transaction,

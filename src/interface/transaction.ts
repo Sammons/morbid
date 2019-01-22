@@ -38,7 +38,7 @@ export class MorbidTransaction {
   private aborted = false;
 
   private get canAbort() { return this.initialized && (!this.aborted && !this.committed); }
-  private get canInitialize() { return !this.initialized; }
+  private get canInitialize() { return !this.initialized && !this.aborted && !this.committed; }
   private get canCommit() { return this.initialized && (!this.aborted && !this.committed); }
 
   id?: string = undefined;
@@ -46,19 +46,15 @@ export class MorbidTransaction {
 
   async initialize() {
     if (this.canInitialize) {
+      this.initialized = true;
       const { client, id } = await this.tracker.acquire();
       this.client = client;
       this.id = id;
       if (client) {
-        if (!this.opts) {
-          await client.query('begin'); // TODO allow isolation levels
-        } else {
-          if (!isolationLevels[this.opts.isolation]) {
-            throw new Error(`Invalid isolation level: ${this.opts.isolation}`);
-          }
-          await client.query(`begin transaction isolation level ${isolationLevels[this.opts.isolation]}`);
+        if (!isolationLevels[this.opts.isolation]) {
+          throw new Error(`Invalid isolation level: ${this.opts.isolation}`);
         }
-        this.initialized = true;
+        await client.query(`begin transaction isolation level ${isolationLevels[this.opts.isolation]}`);
       }
     }
     return this.initialized;
@@ -66,16 +62,16 @@ export class MorbidTransaction {
 
   async commit() {
     if (this.canCommit && this.client && this.id) {
-      await this.client.query('COMMIT;');
       this.committed = true;
+      await this.client.query('COMMIT;');
       this.tracker.release(this.id);
     }
     return this.committed;
   }
   async abort() {
     if (this.canAbort && this.client && this.id) {
-      await this.client.query('ABORT;');
       this.aborted = true;
+      await this.client.query('ABORT;');
       this.tracker.release(this.id);
     }
     return this.aborted;

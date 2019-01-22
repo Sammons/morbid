@@ -1,4 +1,4 @@
-import { connect, resetTestDatabase, cleanup } from './test-utils';
+import { connect, resetTestDatabase, cleanup } from '../test-utilities/common';
 describe('test setup', () => {
   const wipe = async () => {
     const pool = await connect('postgres');

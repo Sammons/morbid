@@ -31,7 +31,7 @@ export class Morbid<T, C>{
   constructor(private definition: T, private pool: pg.Pool) { }
   private clientTracker = new MorbidPGClientTracker(this.pool);
   tables = new MorbidTableClientWrapper<T, C>(this.definition, this.clientTracker).build();
-  async startTransaction(opts?: TransactionOptions) {
+  startTransaction = async (opts?: TransactionOptions) => {
     // declare error first for correct stack
     const failure = new Error('Transaction was not initialized!');
     const transaction = new MorbidTransaction(opts || {

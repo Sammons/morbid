@@ -1,17 +1,5 @@
 import { Query } from 'pg';
-import { MorbidPGClientTracker } from './client-tracker';
-import { MorbidTransaction } from './transaction';
-
-interface MorbidQuery {
-  values: any[];
-  text: string;
-}
-
-export interface RunOptions {
-  clientTracker: MorbidPGClientTracker;
-  query: MorbidQuery;
-  transaction?: MorbidTransaction;
-}
+import { RunOptions } from './execution-params';
 
 const fail = (...errors: Error[]) => {
   let stack = errors[0].stack;
@@ -51,9 +39,8 @@ export const Run = async <T>(opts: RunOptions): Promise<T[]> => {
             } catch (abortFailure) {
               return reject(fail(e, abortFailure, defaultError));
             }
-          } else {
-            return reject(fail(e, defaultError));
           }
+          return reject(fail(e, defaultError));
         });
         client!.query(pgQuery);
       } catch (e) {

@@ -1,6 +1,6 @@
 import { Morbid } from '../src/index';
 import { Def } from './samples/sample-morbid-test-output-definition';
-import { connect, cleanup, resetTestDatabase } from './slow/test-utils';
+import { connect, cleanup, resetTestDatabase } from './test-utilities/common';
 
 // example override for account.data shape
 interface AccountState {

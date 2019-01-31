@@ -3,6 +3,7 @@ import * as extractor from './extraction/schema-extractor';
 import { MorbidTableClientWrapper } from './interface/table-client-wrapper';
 import { MorbidPGClientTracker } from './interface/client-tracker';
 import { TransactionOptions, MorbidTransaction } from './interface/transaction';
+import { MorbidBuilder } from './interface/builder/builder';
 
 interface MorbidParams {
   pg: pg.Pool;
@@ -30,7 +31,9 @@ export class Morbid<T, C>{
 
   constructor(private definition: T, private pool: pg.Pool) { }
   private clientTracker = new MorbidPGClientTracker(this.pool);
+
   tables = new MorbidTableClientWrapper<T, C>(this.definition, this.clientTracker).build();
+  builder = new MorbidBuilder<T, C, {}>(this.definition, this.clientTracker);
   startTransaction = async (opts?: TransactionOptions) => {
     // declare error first for correct stack
     const failure = new Error('Transaction was not initialized!');
@@ -42,4 +45,5 @@ export class Morbid<T, C>{
     }
     throw failure;
   }
+
 }

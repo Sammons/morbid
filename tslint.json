@@ -39,7 +39,7 @@
     ],
     "max-classes-per-file": [
       true,
-      3
+      9
     ],
     "no-submodule-imports": [
       false

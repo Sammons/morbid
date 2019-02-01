@@ -30,19 +30,49 @@ describe.only('table wrapper', () => {
   afterAll(async () => {
     await cleanup();
   });
-  test('basic table usages', async () => {
+  test('a select with inner joins and a where clause', async () => {
     const pool = await connect('table_test');
     const { builder: db } = new Morbid<typeof Def, Customization>(Def, pool);
     const a = db
       .from('account_contact')
-      .innerJoin('contact', 'c2').on('c2', 'id', '=', 'c2', 'id')
+      .innerJoin('contact', 'c2').on('account_contact', 'id', '=', 'c2', 'id')
       .innerJoin('account_event').on('account_event', 'id', 'ilike', 'c2', 'id')
       .where({
         account_event: {
           id: ['1', '2'],
         },
-        c2: { id: ['2'] },
+        c2: {
+          id: ['2'],
+          email: null as any, // TODO: maybe test with a nullable column somewhere
+        },
       });
-    console.log(a.compile().text);
+    const sql = a.compile();
+    expect(sql.text).toBe(
+      'select * from "accounting"."account_contact" as "account_contact" ' +
+      'inner join "accounting"."contact" as "c2" on "account_contact"."id" = "c2"."id" ' +
+      'inner join "accounting"."account_event" as "account_event" on "account_event"."id" ilike "c2"."id" ' +
+      'where "account_event"."id" in ($1, $2) and ' +
+      '"c2"."id" in ($3) and ' +
+      '"c2"."email" is null'
+    );
+    expect(sql.values).toEqual(['1', '2', '2']);
+  });
+  test('a select with a where clause', async () => {
+    const pool = await connect('table_test');
+    const { builder: db } = new Morbid<typeof Def, Customization>(Def, pool);
+    const a = db.from('invoice').where({
+      invoice: {
+        id: '1',
+        recipient: ['a', 'b'],
+        created_by: null as any,
+      },
+    }).compile();
+    expect(a.text).toBe(
+      'select * from "accounting"."invoice" as "invoice" ' +
+      'where "invoice"."id" = $1 ' +
+      'and "invoice"."recipient" in ($2, $3) ' +
+      'and "invoice"."created_by" is null'
+    );
+    expect(a.values).toEqual(['1', 'a', 'b']);
   });
 });

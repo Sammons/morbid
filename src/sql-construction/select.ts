@@ -20,15 +20,19 @@ export const CompileSelectBuilder = (container: SelectContainer) => {
     }
     if (exp.kind === 'comp1') {
       return {
-        text: `"${exp.alias1}"."${exp.alias2}" ${exp.op} "${exp.alias2}"."${exp.column2}"`,
+        text: `"${exp.alias1}"."${exp.column1}" ${exp.op} "${exp.alias2}"."${exp.column2}"`,
       };
     }
     if (exp.kind === 'comp2') {
       let text = `"${exp.alias1}"."${exp.column1}"`;
-      if (exp.value === null) {
+      if (exp.op === 'is null') {
         text += ' is null';
       } else {
-        text += ` ${exp.op} ${bind(exp.value)}`;
+        if (exp.op === 'in' && Array.isArray(exp.value)) {
+          text += ` ${exp.op} (${exp.value.map(v => bind(v)).join(', ')})`;
+        } else {
+          text += ` ${exp.op} ${bind(exp.value)}`;
+        }
       }
       return {
         text: `${text}`,
@@ -38,13 +42,17 @@ export const CompileSelectBuilder = (container: SelectContainer) => {
   };
   if (container.joins.length > 0) {
     container.joins.forEach(j => {
-      sql += `${j.kind} join "${j.schema}"."${j.table}" `;
+      sql += `${j.kind} join "${j.schema}"."${j.table}" as "${j.alias}" `;
       sql += `on ${j.expressions.map(exp => mapExp(exp).text).join(' and ')} `;
     });
   }
   if (container.wheres) {
     const where = mapExp(container.wheres);
-    sql += `where ${where.text}`;
+    if (where.text[0] === '(')
+      sql += `where ${
+        //TODO: clean this up later
+        where.text.substr(1, where.text.length - 2)
+        }`;
   }
   return {
     text: sql,

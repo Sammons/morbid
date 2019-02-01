@@ -88,54 +88,61 @@ export class MorbidAfterFrom<T extends any, C, Context> {
   }
   where(clause: { [K in ContextAliasNames<Context>]?: I.SchemalessWhereLiteral<T, C, ContextAliases<Context>[K]> }) {
     const aliasesUsed = Object.keys(clause);
-    aliasesUsed.map(a => this.container.joins.find(j => j.alias === a)).forEach(usedJoin => {
+    aliasesUsed.map(a => {
+      const joinUsed = this.container.joins.find(j => j.alias === a);
+      if (joinUsed) {
+        return joinUsed;
+      }
+      if (this.container.from!.alias === a) {
+        return this.container.from;
+      }
+      throw new Error('Could not find alias that was in where clause!');
+    }).forEach(usedJoin => {
       if (usedJoin) {
         const clauseKey = usedJoin.alias as keyof typeof clause;
         const specificClause = clause[clauseKey] as { [col: string]: any | any[] };
+        const commonWhereValues = {
+          alias1: usedJoin.alias,
+        };
         if (!this.container.wheres) {
-          const commonWhereValues = {
-            alias1: usedJoin.alias,
+          this.container.wheres = {
+            kind: 'andor',
+            type: 'and',
+            list: [],
           };
-          if (!this.container.wheres) {
-            this.container.wheres = {
-              kind: 'andor',
-              type: 'and',
-              list: [],
-            };
-          }
-          const columnsUsed = Object.keys(specificClause);
-          columnsUsed.forEach(col => {
-            const w = this.container.wheres as AndOr;
-            const v = specificClause[col];
-            if (v === null) {
-              w.list.push({
-                ...commonWhereValues,
-                kind: 'comp2',
-                column1: col,
-                op: 'is null',
-              });
-              return;
-            }
-            if (Array.isArray(v)) {
-              w.list.push({
-                ...commonWhereValues,
-                kind: 'comp2',
-                column1: col,
-                op: 'in',
-                value: v,
-              });
-              return;
-            }
+        }
+        const columnsUsed = Object.keys(specificClause);
+        columnsUsed.forEach(col => {
+          const w = this.container.wheres as AndOr;
+          const v = specificClause[col];
+          if (v === null) {
             w.list.push({
               ...commonWhereValues,
               kind: 'comp2',
               column1: col,
-              op: '=',
+              op: 'is null',
+            });
+            return;
+          }
+          if (Array.isArray(v)) {
+            w.list.push({
+              ...commonWhereValues,
+              kind: 'comp2',
+              column1: col,
+              op: 'in',
               value: v,
             });
             return;
+          }
+          w.list.push({
+            ...commonWhereValues,
+            kind: 'comp2',
+            column1: col,
+            op: '=',
+            value: v,
           });
-        }
+          return;
+        });
       }
     });
     return new MorbidAfterWhere<T, C, Context>(
@@ -160,7 +167,7 @@ export class MorbidBuilder<T extends any, C, Context> {
       table,
       alias: table,
     };
-    return new MorbidAfterFrom<T, C, { from: Table }>(
+    return new MorbidAfterFrom<T, C, { from: Table, aliases: { [K in Table]: Table } }>(
       this.definition,
       this.clientTracker,
       this.container.clone()

@@ -23,7 +23,7 @@ type Customization = {
   },
 };
 
-describe('table wrapper', () => {
+describe.only('table wrapper', () => {
   beforeAll(async () => {
     await resetTestDatabase('table_test');
   });
@@ -43,6 +43,6 @@ describe('table wrapper', () => {
         },
         c2: { id: ['2'] },
       });
-    console.log(a);
+    console.log(a.compile().text);
   });
 });

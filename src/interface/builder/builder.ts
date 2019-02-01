@@ -1,53 +1,11 @@
 import { MorbidPGClientTracker } from '../client-tracker';
 import * as I from '../../inference/definition-inference';
 import * as _ from 'lodash';
+import { CompileSelectBuilder } from '../../sql-construction/select';
+import { SelectContainer, ContextAliasNames, ColumnNamesByAliasName, ContextAliases, AndOr } from './builder-types';
+import { MorbidTransaction } from '../transaction';
+import { Run } from '../execution/run';
 
-export type ContextFrom<Ctx> = Ctx extends { from: infer Table } ? Table : never;
-export type ContextAliases<Ctx> = Ctx extends { aliases: infer Aliases } ? Aliases : {};
-export type ContextAliasNames<Ctx> = Ctx extends { aliases: infer Aliases } ? Extract<keyof Aliases, string> : never;
-export type ColumnNamesByAliasName<
-  T,
-  Ctx, AliasName extends string
-  > =
-  ContextAliases<Ctx> extends { [K in AliasName]: infer TableName }
-  ? TableName extends string ? I.InferTableOrViewColumnNamesWithoutSchema<T, TableName> : never
-  : never;
-
-type BasicComparison = {
-  alias1: string;
-  column1: string;
-  op: string;
-  alias2: string;
-  column2: string;
-} | {
-  schema1: string;
-  table1: string;
-  column1: string;
-  op: string;
-  value?: (string | number | null) | (string | number | null)[];
-};
-
-interface AndOr {
-  type: 'and' | 'or';
-  list: (BasicComparison | AndOr)[];
-}
-
-type BoolExpression = AndOr | BasicComparison;
-
-class SelectContainer {
-  from: string | null = null;
-  joins: {
-    schema: string;
-    table: string;
-    alias: string;
-    expressions: BoolExpression[]
-  }[] = [];
-  wheres: BoolExpression | null = null;
-  clone() {
-    const fresh = new SelectContainer();
-    return Object.assign(fresh, _.cloneDeep(this));
-  }
-}
 
 export class MorbidOnAfterJoin<T, C, Context> {
   constructor(
@@ -70,6 +28,7 @@ export class MorbidOnAfterJoin<T, C, Context> {
   ): MorbidAfterFrom<T, C, Context> {
     const top = this.container.joins.slice(-1)[0];
     top.expressions.push({
+      kind: 'comp1',
       alias1: a1,
       alias2: a2,
       column1: c1,
@@ -83,9 +42,23 @@ export class MorbidOnAfterJoin<T, C, Context> {
 export class MorbidAfterWhere<T extends any, C, Context> {
   constructor(
     // private definition: T,
-    // private clientTracker: MorbidPGClientTracker,
-    // private container: SelectContainer
-  ) { }
+    private clientTracker: MorbidPGClientTracker,
+    private container: SelectContainer
+  ) {
+
+  }
+  compile() {
+    const construction = CompileSelectBuilder(this.container);
+    return {
+      text: construction.text,
+      values: construction.bindings,
+    };
+  }
+  run = (transaction?: MorbidTransaction) => Run<any>({
+    clientTracker: this.clientTracker,
+    query: this.compile(),
+    transaction,
+  })
 }
 
 export class MorbidAfterFrom<T extends any, C, Context> {
@@ -101,6 +74,7 @@ export class MorbidAfterFrom<T extends any, C, Context> {
       throw new Error('Invalid table name could not be found in a schema. Your code probably had compile errors but still emitted.');
     }
     this.container.joins.push({
+      kind: 'inner',
       alias: alias,
       schema: schema,
       table: table,
@@ -120,11 +94,11 @@ export class MorbidAfterFrom<T extends any, C, Context> {
         const specificClause = clause[clauseKey] as { [col: string]: any | any[] };
         if (!this.container.wheres) {
           const commonWhereValues = {
-            schema1: usedJoin.schema,
-            table1: usedJoin.table,
+            alias1: usedJoin.alias,
           };
           if (!this.container.wheres) {
             this.container.wheres = {
+              kind: 'andor',
               type: 'and',
               list: [],
             };
@@ -136,6 +110,7 @@ export class MorbidAfterFrom<T extends any, C, Context> {
             if (v === null) {
               w.list.push({
                 ...commonWhereValues,
+                kind: 'comp2',
                 column1: col,
                 op: 'is null',
               });
@@ -144,6 +119,7 @@ export class MorbidAfterFrom<T extends any, C, Context> {
             if (Array.isArray(v)) {
               w.list.push({
                 ...commonWhereValues,
+                kind: 'comp2',
                 column1: col,
                 op: 'in',
                 value: v,
@@ -152,6 +128,7 @@ export class MorbidAfterFrom<T extends any, C, Context> {
             }
             w.list.push({
               ...commonWhereValues,
+              kind: 'comp2',
               column1: col,
               op: '=',
               value: v,
@@ -162,19 +139,27 @@ export class MorbidAfterFrom<T extends any, C, Context> {
       }
     });
     return new MorbidAfterWhere<T, C, Context>(
-      // this.definition, this.clientTracker, this.container
+      // this.definition, 
+      this.clientTracker,
+      this.container
     );
   }
 }
 
-export class MorbidBuilder<T, C, Context> {
+export class MorbidBuilder<T extends any, C, Context> {
   constructor(
     private definition: T,
     private clientTracker: MorbidPGClientTracker
   ) { }
   container: SelectContainer = new SelectContainer();
   from<Table extends I.AllTableOrViewNames<T>>(table: Table) {
-    this.container.from = table;
+    const schemas = Object.keys(this.definition.schemas);
+    const schema = schemas.find(s => this.definition.schemas[s].tables[table]) as string;
+    this.container.from = {
+      schema,
+      table,
+      alias: table,
+    };
     return new MorbidAfterFrom<T, C, { from: Table }>(
       this.definition,
       this.clientTracker,

@@ -360,7 +360,7 @@ export type TableInsertShape<T, C, TargetName extends string> =
   }>
   : never;
 
-export type SelectColumns<Schema, TargetName> = GetTableOrViewType<Schema, TargetName> extends {
+export type SchemalessSelectColumns<T, TargetName extends string> = InferTableOrViewWithoutSchema<T, TargetName> extends {
   columns: infer Columns,
 }
   ? Array<StringKeys<Columns>>

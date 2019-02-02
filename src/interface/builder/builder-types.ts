@@ -36,6 +36,12 @@ export interface AndOr {
 
 export type BoolExpression = AndOr | BasicComparison;
 
+export interface Selection {
+  alias: string;
+  column: string;
+  as: string;
+}
+
 export class SelectContainer {
   from: {
     schema: string;
@@ -50,6 +56,8 @@ export class SelectContainer {
     expressions: BoolExpression[]
   }[] = [];
   wheres: BoolExpression | null = null;
+  selections: Selection[] = [];
+  mapping: { [K: string]: string } = {};
   clone() {
     const fresh = new SelectContainer();
     return Object.assign(fresh, _.cloneDeep(this));

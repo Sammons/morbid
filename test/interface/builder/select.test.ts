@@ -1,38 +1,43 @@
-import { Morbid } from '../src/index';
-import { Def } from './samples/sample-morbid-test-output-definition';
-import { connect, cleanup, resetTestDatabase } from './test-utilities/common';
-
-// example override for account.data shape
-interface AccountState {
-  kind: number;
-  email?: string;
-}
-
-type Customization = {
-  // globally override a type
-  __override__: {
-    bytea: Buffer,
-    uuid: string;
-  },
-  // optionally comandeer the type for a specific
-  // column, handy for json columns
-  tables: {
-    account: {
-      data: AccountState,
-    },
-  },
-};
+import { cleanup, resetTestDatabase, getTestMorbid } from '../../test-utilities/common';
 
 describe.only('table wrapper', () => {
+  // should be unique to this file
+  const testDatabase = 'select_builder_test';
+  const getMorbid = () => getTestMorbid(testDatabase);
   beforeAll(async () => {
-    await resetTestDatabase('table_test');
+    await resetTestDatabase(testDatabase);
   });
   afterAll(async () => {
+    const { builder: db, tables: tb } = await getMorbid();
+    await tb.contact.deleteAll().run();
     await cleanup();
   });
+  test('select all of a specific column from an aliased table', async () => {
+    const { builder: db, tables: tb } = await getMorbid();
+    await tb.contact.insert([{
+      email: 'test@sammons.io',
+      data: {},
+    }]).run();
+    const result = await db.from('contact', 'c')
+      .select({
+        c: ['id', 'email'],
+      }).run();
+    expect(result.length).toBe(1);
+    expect(result[0]).toMatchObject({
+      c: {
+        id: expect.stringMatching(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/),
+        email: 'test@sammons.io',
+      },
+    });
+  });
+  test('select using an alias', async () => {
+    const { builder: db } = await getMorbid();
+    const result = db.from('contact', 'c').where({ c: { email: ['1'] } }).compile();
+    expect(result.text).toBe('select * from "accounting"."contact" as "c" where "c"."email" in ($1)');
+    expect(result.values).toEqual(['1']);
+  });
   test('a select with inner joins and a where clause', async () => {
-    const pool = await connect('table_test');
-    const { builder: db } = new Morbid<typeof Def, Customization>(Def, pool);
+    const { builder: db } = await getMorbid();
     const a = db
       .from('account_contact')
       .innerJoin('contact', 'c2').on('account_contact', 'id', '=', 'c2', 'id')
@@ -58,8 +63,7 @@ describe.only('table wrapper', () => {
     expect(sql.values).toEqual(['1', '2', '2']);
   });
   test('a select with a where clause', async () => {
-    const pool = await connect('table_test');
-    const { builder: db } = new Morbid<typeof Def, Customization>(Def, pool);
+    const { builder: db } = await getMorbid();
     const a = db.from('invoice').where({
       invoice: {
         id: '1',

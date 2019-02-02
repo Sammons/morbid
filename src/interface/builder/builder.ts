@@ -2,7 +2,7 @@ import { MorbidPGClientTracker } from '../client-tracker';
 import * as I from '../../inference/definition-inference';
 import * as _ from 'lodash';
 import { CompileSelectBuilder } from '../../sql-construction/select';
-import { SelectContainer, ContextAliasNames, ColumnNamesByAliasName, ContextAliases, AndOr } from './builder-types';
+import { SelectContainer, ContextAliasNames, ColumnNamesByAliasName, ContextAliases, AndOr, Selection } from './builder-types';
 import { MorbidTransaction } from '../transaction';
 import { Run } from '../execution/run';
 
@@ -61,12 +61,72 @@ export class MorbidAfterWhere<T extends any, C, Context> {
   })
 }
 
+export class MorbidAfterSelect<T extends any, C, Context> {
+  constructor(
+    private definition: T,
+    private clientTracker: MorbidPGClientTracker,
+    private container: SelectContainer
+  ) {
+    this.definition;//TODO
+  }
+  compile() {
+    const construction = CompileSelectBuilder(this.container);
+    return {
+      text: construction.text,
+      values: construction.bindings,
+    };
+  }
+  run = (transaction?: MorbidTransaction) => Run<Context extends { shape: infer Shape } ? Shape : {}>({
+    clientTracker: this.clientTracker,
+    query: this.compile(),
+    transaction,
+  }, this.container.mapping)
+}
+
 export class MorbidAfterFrom<T extends any, C, Context> {
   constructor(
     private definition: T,
     private clientTracker: MorbidPGClientTracker,
     private container: SelectContainer
   ) { }
+  select<Clause extends { [K in ContextAliasNames<Context>]?: I.SchemalessSelectColumns<T, ContextAliases<Context>[K]> }>(
+    clause: Clause
+  ) {
+    const aliasesUsed = Object.keys(clause);
+    for (let alias of aliasesUsed) {
+      const columnNames = (clause as { [K: string]: string[] })[alias] as string[];
+      if (columnNames) {
+        this.container.selections.push(...columnNames.map(c => {
+          // this is saying map the result "x.y" to the path "x"."y"
+          this.container.mapping[`${alias}.${c}`] = `${alias}.${c}`;
+          return {
+            alias: alias,
+            column: c,
+            as: `${alias}.${c}`,
+          };
+        }));
+      }
+    }
+    return new MorbidAfterSelect<T, C, Context & {
+      shape: {
+        [K in keyof Clause]: K extends keyof ContextAliases<Context>
+        ? ContextAliases<Context>[K] extends infer A
+        ? A extends string
+        ? Pick<I.TableShape<T, C, A>,
+          Clause[K] extends infer Cols
+          ? Cols extends string[] ? Cols[number] : any
+          : never
+        >
+        : never
+        : never
+        : never
+      },
+    }>(
+      this.definition,
+      this.clientTracker,
+      this.container.clone()
+    );
+  }
   innerJoin<Table extends I.AllTableOrViewNames<T>, Alias extends string = Table>(table: Table, alias: Alias = table) {
     const schemas = Object.keys(this.definition.schemas);
     const schema = schemas.find(s => this.definition.schemas[s].tables[table]);
@@ -158,16 +218,16 @@ export class MorbidBuilder<T extends any, C, Context> {
     private definition: T,
     private clientTracker: MorbidPGClientTracker
   ) { }
-  container: SelectContainer = new SelectContainer();
-  from<Table extends I.AllTableOrViewNames<T>>(table: Table) {
+  private container: SelectContainer = new SelectContainer();
+  from<Table extends I.AllTableOrViewNames<T>, Alias extends string = Table>(table: Table, alias: Alias = table) {
     const schemas = Object.keys(this.definition.schemas);
     const schema = schemas.find(s => this.definition.schemas[s].tables[table]) as string;
     this.container.from = {
       schema,
       table,
-      alias: table,
+      alias,
     };
-    return new MorbidAfterFrom<T, C, { from: Table, aliases: { [K in Table]: Table } }>(
+    return new MorbidAfterFrom<T, C, { from: Table, aliases: { [K in Alias]: Table } }>(
       this.definition,
       this.clientTracker,
       this.container.clone()

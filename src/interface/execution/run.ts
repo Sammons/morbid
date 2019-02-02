@@ -1,5 +1,6 @@
 import { Query } from 'pg';
 import { RunOptions } from './execution-params';
+const _ = require('lodash');
 
 const fail = (...errors: Error[]) => {
   let stack = errors[0].stack;
@@ -10,7 +11,7 @@ const fail = (...errors: Error[]) => {
   return errors[0];
 };
 
-export const Run = async <T>(opts: RunOptions): Promise<T[]> => {
+export const Run = async <T>(opts: RunOptions, mapping?: { [K: string]: string }): Promise<T[]> => {
   // workaround bad async stacks in node < 12 https://github.com/nodejs/node/issues/11865
   const defaultError = new Error();
 
@@ -24,10 +25,18 @@ export const Run = async <T>(opts: RunOptions): Promise<T[]> => {
   } else {
     return new Promise((resolve, reject) => {
       try {
+        console.log(opts.query.text);
         const pgQuery = new (Query as any)(opts.query.text, opts.query.values);
-        const rows: T[] = [];
+        const rows: any[] = [];
         pgQuery.on('row', (row: any) => {
-          rows.push(row);
+          if (!mapping) {
+            rows.push(row);
+          } else {
+            const mappingKeys = Object.keys(mapping);
+            let newRow: T = {} as any;
+            mappingKeys.forEach(k => _.set(newRow, mapping[k], row[k]));
+            rows.push(newRow);
+          }
         });
         pgQuery.on('end', () => {
           resolve(rows);

@@ -6,7 +6,15 @@ export const CompileSelectBuilder = (container: SelectContainer) => {
     bindings.push(el);
     return `$${bindings.length}`;
   };
-  let sql = 'select * from ';
+  let sql = 'select';
+  if (container.selections.length > 0) {
+    sql += ' ' + container.selections.map(s => {
+      return `"${s.alias}"."${s.column}"${s.as === s.column ? '' : ` as "${s.as}"`}`;
+    }).join(', ');
+  } else {
+    sql += ' *';
+  }
+  sql += ' from ';
   if (!container.from) {
     throw new Error('Need a from table!');
   } else {

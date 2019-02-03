@@ -21,3 +21,6 @@ before_script:
 script:
   - npm run travis
 
+after_script:
+  - bash travis-scripts/ci-updates.sh
+

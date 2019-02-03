@@ -7,9 +7,11 @@ describe.only('table wrapper', () => {
   beforeAll(async () => {
     await resetTestDatabase(testDatabase);
   });
-  afterAll(async () => {
-    const { builder: db, tables: tb } = await getMorbid();
+  afterEach(async () => {
+    const { tables: tb } = await getMorbid();
     await tb.contact.deleteAll().run();
+  });
+  afterAll(async () => {
     await cleanup();
   });
   test('really simple select', async () => {

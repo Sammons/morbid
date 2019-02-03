@@ -2,7 +2,7 @@ import { MorbidPGClientTracker } from '../client-tracker';
 import * as I from '../../inference/definition-inference';
 import * as _ from 'lodash';
 import { CompileSelectBuilder } from '../../sql-construction/select';
-import { SelectContainer, ContextAliasNames, ColumnNamesByAliasName, ContextAliases, AndOr, Selection } from './builder-types';
+import { SelectContainer, ContextAliasNames, ColumnNamesByAliasName, ContextAliases, AndOr } from './builder-types';
 import { MorbidTransaction } from '../transaction';
 import { Run } from '../execution/run';
 

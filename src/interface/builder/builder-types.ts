@@ -58,6 +58,14 @@ export class SelectContainer {
   wheres: BoolExpression | null = null;
   selections: Selection[] = [];
   mapping: { [K: string]: string } = {};
+  get tables() {
+    let res: { schema: string; table: string }[] = [];
+    if (this.from) {
+      res.push({ schema: this.from.schema, table: this.from.table });
+    }
+    res.push(...this.joins.map(j => ({ schema: j.schema, table: j.table })));
+    return res;
+  }
   clone() {
     const fresh = new SelectContainer();
     return Object.assign(fresh, _.cloneDeep(this));

@@ -89,6 +89,24 @@ export class MorbidAfterFrom<T extends any, C, Context> {
     private clientTracker: MorbidPGClientTracker,
     private container: SelectContainer
   ) { }
+  compile() {
+    const construction = CompileSelectBuilder(this.container);
+    return {
+      text: construction.text,
+      values: construction.bindings,
+    };
+  }
+  run = (transaction?: MorbidTransaction) => {
+    // select everything
+    let selections = {} as any as {
+      [K in ContextAliasNames<Context>]: I.SchemalessSelectColumns<T, ContextAliases<Context>[K]>
+    };
+    this.container.tables.forEach(t => {
+      const cols = Object.keys(this.definition.schemas[t.schema].tables[t.table].columns);
+      _.set(selections, t.table, cols);
+    });
+    return this.select(selections).run(transaction);
+  }
   select<Clause extends { [K in ContextAliasNames<Context>]?: I.SchemalessSelectColumns<T, ContextAliases<Context>[K]> }>(
     clause: Clause
   ) {

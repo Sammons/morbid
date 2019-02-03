@@ -12,6 +12,22 @@ describe.only('table wrapper', () => {
     await tb.contact.deleteAll().run();
     await cleanup();
   });
+  test('really simple select', async () => {
+    const { builder: db, tables: tb } = await getMorbid();
+    await tb.contact.insert([{
+      email: 'test@sammons.io',
+      data: {},
+    }]).run();
+    const result = await db.from('contact').run();
+    expect(result.length).toBe(1);
+    expect(result[0]).toMatchObject({
+      contact: {
+        id: expect.stringMatching(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/),
+        email: 'test@sammons.io',
+        data: {},
+      },
+    });
+  });
   test('select all of a specific column from an aliased table', async () => {
     const { builder: db, tables: tb } = await getMorbid();
     await tb.contact.insert([{

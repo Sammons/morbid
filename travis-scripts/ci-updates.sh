@@ -15,6 +15,6 @@ if [ "$BRANCH" = "master" ]; then
   gpg --import --passphrase $gpg_pass gpg_private.pem
   gpg --import gpg_public.pem
   git config --global user.signingkey 0F2911F3E9978A33
-  GIT_SSH_COMMAND="ssh -i travis-scripts/rsa_private.pem" git commit -m "travis updating coverage, version [ci skip]"
+  GIT_SSH_COMMAND="ssh -i travis-scripts/rsa_private.pem" git commit -S -m "travis updating coverage, version [ci skip]"
 fi;
 

@@ -1,6 +1,6 @@
 {
   "name": "morbid-postgres",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Querybuilder for postgres",
   "main": "built/src/index.js",
   "scripts": {

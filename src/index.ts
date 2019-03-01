@@ -4,6 +4,7 @@ import { MorbidTableClientWrapper } from './interface/table-client-wrapper';
 import { MorbidPGClientTracker } from './interface/client-tracker';
 import { TransactionOptions, MorbidTransaction } from './interface/transaction';
 import { MorbidBuilder } from './interface/builder/builder';
+import { Migrater } from './migrations/migrater';
 
 interface MorbidParams {
   pg: pg.Pool;
@@ -47,3 +48,5 @@ export class Morbid<T, C>{
   }
 
 }
+
+export { Migrater };

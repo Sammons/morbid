@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import * as util from 'util';
 
 const exists = util.promisify(fs.exists);
+const readdir = util.promisify(fs.readdir);
+const readFile = util.promisify(fs.readFile);
 
 export interface MigrationConfiguration {
   directory: string;
@@ -22,7 +24,7 @@ export class Migrater {
   }
   async detectMigrations() {
     if (await exists(this.configuration.directory)) {
-      const files = await fs.promises.readdir(this.configuration.directory);
+      const files = await readdir(this.configuration.directory);
       const sqlFiles = files.filter(file => file.endsWith('.sql')).sort(); // character sort
       return sqlFiles.map(filename => path.resolve(this.configuration.directory, filename));
     } else {
@@ -68,7 +70,7 @@ export class Migrater {
       // run migrations
       const paths = await this.detectMigrations();
       for (let migration of paths) {
-        const contents = await fs.promises.readFile(migration);
+        const contents = await readFile(migration);
         const formatted = formatter.format(contents.toString());
         const hash = this.getHash(formatted);
         const name = path.parse(migration).base;

@@ -1,8 +1,8 @@
 {
   "name": "morbid-postgres",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Querybuilder for postgres",
-  "main": "index.js",
+  "main": "built/src/index.js",
   "scripts": {
     "start-pg": "docker-compose up -d",
     "restart-pg": "docker stop postgres && docker start postgres",
@@ -13,8 +13,12 @@
     "test": "npm-run-all build start-pg jest badges",
     "travis": "npm-run-all build jest",
     "tslint-with-types": "tslint --project .",
-    "setup-test-db": "tsc -p . && node -e 'require(`./built/test/test-utils.js`).resetTestDatabase(`test`)'"
+    "setup-test-db": "tsc -p . && node -e 'require(`./built/test/test-utils.js`).resetTestDatabase(`test`)'",
+    "prepublish": "npm-run-all clean build"
   },
+  "files": [
+    "built"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {

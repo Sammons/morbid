@@ -166,7 +166,7 @@ export const Def = {
             label: {
               name: 'label' as 'label',
               type: 'text' as 'text',
-              nullable: 'F' as 'F',
+              nullable: 'T' as 'T',
               primary: 'T' as 'T',
               defaultable: 'F' as 'F',
             },

@@ -193,10 +193,10 @@ export type GetTableOrViewType<Schema, Name> =
 
 
 export type GetDefaultJSType<Column> =
-  (Column extends { type: infer Type }
+  (Column extends { type: infer Type, nullable: infer Nullable }
     ? Type extends string
     ? DefaultTypeMap extends { [K in Type]: infer JSType; }
-    ? JSType | (Column extends { nullable: 'Y' } ? null : JSType)
+    ? (Nullable extends string & 'T' ? null : JSType) | JSType
     : 'unknown'
     : Type
     : never);

@@ -1,6 +1,7 @@
-import { Morbid } from '../src/index';
-import { Def } from './samples/sample-morbid-test-output-definition';
 import * as pg from 'pg';
+
+import { Morbid } from '../src';
+import { Def } from './samples/sample-morbid-test-output-definition';
 
 // example override for account.data shape
 interface AccountState {
@@ -37,7 +38,7 @@ describe('basic table builder', async () => {
       text: 'select "id", "data" from "accounting"."account" where "data" is null and "id" = $1;',
     });
     expect(db.account.select('id', 'data').where({
-      data: null as any,
+      label: null,
       id: ['123', '234'],
     }).compile()).toMatchObject({
       values: ['123', '234'],
